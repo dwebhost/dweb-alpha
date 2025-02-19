@@ -1,0 +1,40 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite" // postgresql
+  url      = env("DATABASE_URL")
+}
+
+model FileUpload {
+  id         String   @id @unique
+  type       Int
+  githubUrl  String?
+  commitHash String?
+  fileHash   String?
+  localPath  String
+  createdAt  DateTime
+  updatedAt  DateTime
+
+  @@index([id, githubUrl, fileHash])
+}
+
+model Deployment {
+  id         Int       @id @default(autoincrement())
+  uploadId   String    @unique
+  status     String
+  ensName    String?
+  ipfsCid    String?
+  deployedAt DateTime?
+  createdAt  DateTime
+  updatedAt  DateTime
+
+  @@index([uploadId, ensName])
+}
