@@ -38,6 +38,19 @@ async function fetchDomainsByOwner(ownerAddress: string) {
   }
 }
 
+async function fetchENSData(ownerAddress: string) {
+  const url = "https://api.studio.thegraph.com/query/49574/enssepolia/version/latest";
+  try {
+    const variables = {
+      owner: ownerAddress.toLowerCase(), // Convert to lowercase for consistency
+    };
+
+    return  await request(url, query, variables);
+  } catch (error) {
+    console.error("Error fetching ENS data:", error);
+  }
+}
+
 /**
  * GET/POST endpoint for retrieving domains by owner.
  *
@@ -54,7 +67,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Missing 'owner' parameter" }, { status: 400 })
     }
 
-    const data = await fetchDomainsByOwner(ownerParam)
+    // const data = await fetchDomainsByOwner(ownerParam)
+    const data = await fetchENSData(ownerParam)
     return NextResponse.json(data)
   } catch (err) {
     console.error("Error in GET /api/ens:", err)

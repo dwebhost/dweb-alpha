@@ -50,7 +50,7 @@ export default function HomePage() {
       const res = await fetch(`/api/ens?owner=${address?.toLowerCase()}`)
       const data = await res.json()
 
-      const fetchedDomains = data.domains || []
+      const fetchedDomains = data.nameWrappeds || []
 
       console.log('Fetched domains:', fetchedDomains);
 
@@ -61,7 +61,6 @@ export default function HomePage() {
           label: d.name,
         };
       })
-      mapped.push({value: "ez42.eth", label: "ez42.eth"})
 
       setEnsName(mapped);
     } catch (err) {
@@ -110,8 +109,6 @@ export default function HomePage() {
   useEffect(() => {
     if (isConnected) {
       fetchData().catch(console.error);
-    } else {
-      setDeployed(false);
     }
   }, [isConnected]);
 
@@ -166,7 +163,7 @@ export default function HomePage() {
             </div>
             {isConnected ?
               <Button onClick={handleUpload} disabled={uploadId !== "" || isUploading} className="w-full">
-                {uploadId ? `Deploying (${uploadId})` : isUploading ? "Uploading..." : "Upload"}
+                {uploadId ? `Deployed (${uploadId})` : isUploading ? "Uploading..." : "Upload"}
               </Button> :
               <ConnectButton.Custom>
                 {({openConnectModal}) => (
@@ -182,7 +179,7 @@ export default function HomePage() {
           </div>
         </CardContent>
       </Card>
-      {uploadId && <Card className="w-full max-w-md mt-8">
+      {uploadId && isConnected && <Card className="w-full max-w-md mt-8">
           <CardHeader>
               <CardTitle className="text-xl">Deployment Status</CardTitle>
               {deployed ? <CardDescription>Your website is successfully deployed to IPFS!</CardDescription> : <CardDescription>Deploying your website...to IPFS</CardDescription>}
@@ -198,9 +195,16 @@ export default function HomePage() {
                 <Label htmlFor="ipfs-cid">ENS</Label>
                 <ComboboxComponent options={ensName} onSelect={handleSelection} disabled={!deployed} />
               </div>
-              <Button className="w-full" onClick={publishWeb} disabled={!isConfirmed}>
-                {isConfirming ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : "Publish Website"}
-              </Button>
+              {isConfirmed ?
+                <Button className="w-full" variant="outline">
+                  <a href={`http://${uploadId}.10kdevs.com/index.html`} target="_blank">
+                    Visit Website
+                  </a>
+                </Button> :
+                <Button className="w-full" onClick={publishWeb} disabled={isConfirmed}>
+                  {isConfirming ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : "Publish Website"}
+                </Button>
+              }
             </div>
           </CardContent> :
           <CardContent>
