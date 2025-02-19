@@ -14,6 +14,7 @@ import ComboboxComponent from "@/components/combobox";
 import {ENS_REGISTRY_ABI, ENS_RESOLVER_ABI} from "@/lib/abi";
 import {namehash} from "viem";
 import {encode} from "@ensdomains/content-hash";
+import {Loader2} from "lucide-react";
 
 export default function HomePage() {
   const [repoUrl, setRepoUrl] = useState("https://github.com/hkirat/react-boilerplate");
@@ -109,6 +110,8 @@ export default function HomePage() {
   useEffect(() => {
     if (isConnected) {
       fetchData().catch(console.error);
+    } else {
+      setDeployed(false);
     }
   }, [isConnected]);
 
@@ -195,20 +198,15 @@ export default function HomePage() {
                 <Label htmlFor="ipfs-cid">ENS</Label>
                 <ComboboxComponent options={ensName} onSelect={handleSelection} disabled={!deployed} />
               </div>
-              <Button className="w-full" onClick={publishWeb}>Publish Website</Button>
+              <Button className="w-full" onClick={publishWeb} disabled={!isConfirmed}>
+                {isConfirming ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : "Publish Website"}
+              </Button>
             </div>
           </CardContent> :
           <CardContent>
-            <div className="space-y-2">
-              <Label htmlFor="deployed-url">Deploy....</Label>
-              <Input id="deployed-url" readOnly type="url" value={`http://${uploadId}.dev.100xdevs.com:3001/index.html`} />
+            <div className="flex justify-center">
+              <Loader2 className="h-24 w-24 animate-spin"/>
             </div>
-            <br />
-            <Button className="w-full" variant="outline">
-              <a href={`http://${uploadId}.10kdevs.com/index.html`} target="_blank">
-                Visit Website
-              </a>
-            </Button>
           </CardContent>
         }
       </Card>}

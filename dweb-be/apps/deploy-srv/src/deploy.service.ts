@@ -20,7 +20,7 @@ import { PrismaService } from '../../files-srv/src/prisma.service';
 export class DeployService {
   private readonly logger = new Logger(DeployService.name);
   private fileServerUrl =
-    process.env.FILE_SERVER_URL || 'http://localhost:5100';
+    process.env.FILE_SERVICE_URL || 'http://localhost:5100';
   private buildPath = '/tmp/builds';
   private pinata = new PinataSDK({
     pinataJwt: process.env.PINATA_JWT,
@@ -62,7 +62,7 @@ export class DeployService {
 
     // Download ZIP from File Server
     const response: AxiosResponse<NodeJS.ReadableStream> = await axios.get(
-      `${this.fileServerUrl}/download/${uploadId}`,
+      `${this.fileServerUrl}/api/files/download/${uploadId}`,
       { responseType: 'stream' },
     );
 

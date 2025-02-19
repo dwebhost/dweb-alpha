@@ -18,11 +18,6 @@ import type { Response } from 'express';
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @Get()
-  getHello(): string {
-    return this.appService.getHello();
-  }
-
   @Post('upload/github')
   uploadGithub(@Body() data: UploadGithub) {
     return this.appService.uploadGithub(data);

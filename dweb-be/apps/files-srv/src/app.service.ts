@@ -6,26 +6,24 @@ import { FileService } from './file.service';
 import { PrismaService } from './prisma.service';
 import * as fs from 'node:fs';
 import * as archiver from 'archiver';
+import axios from 'axios';
 
 @Injectable()
 export class AppService {
   private readonly logger = new Logger(AppService.name);
+  private readonly deployServiceUrl = process.env.DEPLOY_SERVICE_URL;
 
   constructor(
     private readonly fileSrv: FileService,
     private prisma: PrismaService,
   ) {}
 
-  getHello(): string {
-    return 'Hello World!';
-  }
-
   async uploadGithub(data: UploadGithub) {
     try {
       this.logger.log(`Uploading to Github: ${data.url}`);
       const git = simpleGit();
-      const gitLog = await git.log();
-      const latestCommit = gitLog.latest?.hash || '';
+      const gitLog = await git.listRemote([data.url, `refs/heads/main`]);
+      const latestCommit = gitLog.split('\t')[0];
 
       const fileUploaded = await this.prisma.fileUpload.findFirst({
         where: {
@@ -38,6 +36,9 @@ export class AppService {
 
       const id = generate(); // asd12
       const projectPath = await this.fileSrv.saveFilesFromGithub(id, data.url);
+
+      // call deploy service to deploy the project
+      await this.startDeployment(id);
 
       // update or save file upload information to db
       await this.prisma.fileUpload.upsert({
@@ -95,5 +96,27 @@ export class AppService {
       archive.directory(sourceDir, false);
       archive.finalize().catch(reject);
     });
+  }
+
+  async startDeployment(uploadId: string) {
+    try {
+      this.logger.log(`Starting deployment for uploadId: ${uploadId}`);
+      console.log('Deploy service URL:', this.deployServiceUrl);
+      const response = await axios.post(
+        `${this.deployServiceUrl}/api/deploy/start`,
+        { uploadId },
+      );
+
+      this.logger.log(`Deployment started successfully for ${uploadId}`);
+      this.logger.debug(JSON.stringify(response.data));
+    } catch (error) {
+      this.logger.error(
+        `Failed to start deployment for ${uploadId}`,
+        (error as Error).message,
+      );
+      throw new Error(
+        `Failed to start deployment: ${(error as Error).message}`,
+      );
+    }
   }
 }
