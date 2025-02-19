@@ -1,17 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { DeploySrvController } from './deploy-srv.controller';
-import { DeploySrvService } from './deploy-srv.service';
+import { DeployController } from './deploy.controller';
+import { DeployService } from './deploy.service';
 
 describe('DeploySrvController', () => {
-  let deploySrvController: DeploySrvController;
+  let deploySrvController: DeployController;
 
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
-      controllers: [DeploySrvController],
-      providers: [DeploySrvService],
+      controllers: [DeployController],
+      providers: [DeployService],
     }).compile();
 
-    deploySrvController = app.get<DeploySrvController>(DeploySrvController);
+    deploySrvController = app.get<DeployController>(DeployController);
   });
 
   describe('root', () => {

@@ -20,16 +20,21 @@
     "test:e2e": "jest --config apps/files-srv/test/jest-e2e.json"
   },
   "dependencies": {
+    "@nestjs/bullmq": "^11.0.2",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@prisma/client": "6.4.0",
     "archiver": "^7.0.1",
+    "axios": "^1.7.9",
+    "bullmq": "^5.41.3",
     "fs-extra": "^11.3.0",
+    "ioredis": "^5.5.0",
     "multer": "1.4.5-lts.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "simple-git": "^3.27.0"
+    "simple-git": "^3.27.0",
+    "unzipper": "^0.12.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -45,6 +50,7 @@
     "@types/jest": "^29.5.14",
     "@types/node": "^22.10.7",
     "@types/supertest": "^6.0.2",
+    "@types/unzipper": "^0.10.10",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",

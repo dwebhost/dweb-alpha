@@ -1,8 +1,8 @@
 import { NestFactory } from '@nestjs/core';
-import { DeploySrvModule } from './deploy-srv.module';
+import { DeployModule } from './deploy.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(DeploySrvModule);
+  const app = await NestFactory.create(DeployModule);
   await app.listen(process.env.port ?? 5200);
 }
 bootstrap();

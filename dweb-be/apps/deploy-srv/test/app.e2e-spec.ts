@@ -1,14 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { DeploySrvModule } from './../src/deploy-srv.module';
+import { DeployModule } from '../src/deploy.module';
 
 describe('DeploySrvController (e2e)', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [DeploySrvModule],
+      imports: [DeployModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
