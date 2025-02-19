@@ -25,7 +25,10 @@ export class DeployProcessor extends WorkerHost {
       await job.updateProgress(66);
 
       // Step 3: Upload to IPFS
-      const ipfsCid = this.deployService.uploadToIPFS(projectPath);
+      const ipfsCid = await this.deployService.uploadToIPFS(
+        uploadId,
+        projectPath,
+      );
       await job.updateProgress(100);
 
       // Mark job as completed
@@ -39,16 +42,18 @@ export class DeployProcessor extends WorkerHost {
   }
 
   @OnWorkerEvent('completed')
-  onCompleted(job: Job) {
+  async onCompleted(job: Job) {
     this.logger.log(
       `Job ${job.id} has completed with result: ${JSON.stringify(job)}`,
     );
-  }
-
-  @OnWorkerEvent('failed')
-  onFailed(job: Job) {
-    this.logger.error(
-      `Job ${job.id} has failed with error: ${job.failedReason}`,
+    if (!job.returnvalue) {
+      this.logger.error(`Job ${job.id} has no return value`);
+      return;
+    }
+    await this.deployService.updateIPFSCid(
+      job.returnvalue.uploadId as string,
+      job.returnvalue.ipfsCid as string,
+      job.returnvalue.status as string,
     );
   }
 }
