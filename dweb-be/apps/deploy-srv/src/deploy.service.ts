@@ -164,4 +164,17 @@ export class DeployService {
       },
     });
   }
+
+  async getDeployment(uploadId: string) {
+    return this.prisma.deployment.findFirstOrThrow({
+      where: { uploadId },
+      select: {
+        uploadId: true,
+        ipfsCid: true,
+        status: true,
+        ensName: true,
+        error: true,
+      },
+    });
+  }
 }
