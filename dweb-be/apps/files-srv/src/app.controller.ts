@@ -6,7 +6,7 @@ import {
   NotFoundException,
   Param,
   Post,
-  Res, StreamableFile,
+  Res,
 } from '@nestjs/common';
 import { AppService } from './app.service';
 import { UploadGithub } from './dto/upload-github';
@@ -14,7 +14,7 @@ import * as path from 'node:path';
 import { existsSync, createReadStream, unlink } from 'node:fs';
 import type { Response } from 'express';
 
-@Controller()
+@Controller('api/files')
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
@@ -47,9 +47,6 @@ export class AppController {
     // Zip the project before sending
     await this.appService.zipProject(uploadInfo.path, zipPath);
 
-    // const file = createReadStream(zipPath);
-    // return new StreamableFile(file);
-
     // Set headers for file download
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader(
@@ -62,10 +59,10 @@ export class AppController {
     fileStream.pipe(res);
 
     // Cleanup ZIP file after the stream ends
-    // fileStream.on('close', () => {
-    //   unlink(zipPath, (err) => {
-    //     if (err) console.error(`Error deleting temp file ${zipPath}:`, err);
-    //   });
-    // });
+    fileStream.on('close', () => {
+      unlink(zipPath, (err) => {
+        if (err) console.error(`Error deleting temp file ${zipPath}:`, err);
+      });
+    });
   }
 }

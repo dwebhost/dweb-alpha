@@ -1,22 +1,22 @@
 "use client"
 
 import useSWRMutation from "swr/mutation"
-import {backendUrl} from "@/hooks/useSignDomain";
+
+const backendUrl = process.env.NEXT_PUBLIC_FILE_SRV_URL || "http://localhost:5100/api"
 
 /**
  * Type for the payload we send to the API
  */
-interface CheckDomainPayload {
-  domains: string[]
+interface UploadGithubPayload {
+  url: string
 }
 
 /**
  * The fetcher that actually calls the external API endpoint with POST.
  */
-async function checkDomainFetcher(
+async function uploadGithubFetcher(
   url: string,
-  // `arg` is the second parameter from the SWR trigger function.
-  {arg}: { arg: CheckDomainPayload }
+  {arg}: { arg: UploadGithubPayload }
 ) {
   const res = await fetch(url, {
     method: "POST",
@@ -26,7 +26,7 @@ async function checkDomainFetcher(
 
   if (!res.ok) {
     const errorBody = await res.json().catch(() => ({}))
-    const message = errorBody?.message || "Error checking domain"
+    const message = errorBody?.message || "Error upload by github"
     throw new Error(message)
   }
 
@@ -34,26 +34,26 @@ async function checkDomainFetcher(
 }
 
 /**
- * A custom hook that calls the external endpoint (e.g. http://localhost:5100/api/domain/sign).
+ * A custom hook that calls the external endpoint (e.g. http://localhost:5100/api/files/upload/github).
  * You can rename "your-api.com" to your actual domain or endpoint.
  */
-export function useCheckDomain() {
+export function useFileSrv() {
   const {
     trigger,      // function to manually invoke the mutation
     data,         // holds success response data
     error,        // holds error object if the request fails
     isMutating,   // boolean for loading state
-  } = useSWRMutation(backendUrl + "/domain/check", checkDomainFetcher)
+  } = useSWRMutation(backendUrl + "/files/upload/github", uploadGithubFetcher)
 
   /**
    * Wrap trigger() in a user-friendly function.
    */
-  async function checkDomain(payload: CheckDomainPayload) {
+  async function uploadGithub(payload: UploadGithubPayload) {
     return trigger(payload)
   }
 
   return {
-    checkDomain, // the function to call from your component
+    uploadGithub: uploadGithub,
     data,
     error,
     isMutating,

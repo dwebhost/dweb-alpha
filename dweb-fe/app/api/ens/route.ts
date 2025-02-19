@@ -5,11 +5,14 @@ const SUBGRAPH_URL = process.env.SECRET_SUBGRAPH_URL
 
 const query = gql`
   query GetDomainsByOwner($owner: String!) {
-    domains(where: { owner: $owner, parent_: {name: "eth"}}) {
+    nameWrappeds(where: { owner: $owner}) {
       id
       name
       expiryDate
       owner {
+        id
+      },
+      domain {
         id
       }
     }
