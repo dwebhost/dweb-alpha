@@ -35,6 +35,7 @@ model Deployment {
   deployedAt DateTime?
   createdAt  DateTime
   updatedAt  DateTime
+  error      String?
 
   @@index([uploadId, ensName])
 }

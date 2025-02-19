@@ -4,6 +4,8 @@ import { simpleGit } from 'simple-git';
 import { generate } from './utils';
 import { FileService } from './file.service';
 import { PrismaService } from './prisma.service';
+import * as fs from 'node:fs';
+import * as archiver from 'archiver';
 
 @Injectable()
 export class AppService {
@@ -62,5 +64,36 @@ export class AppService {
       this.logger.error(`Error uploading to Github: ${error}`);
       throw error;
     }
+  }
+
+  async getUploadInfo(uploadId: string) {
+    try {
+      this.logger.log(`Downloading from Github: ${uploadId}`);
+      const fileUploaded = await this.prisma.fileUpload.findFirstOrThrow({
+        where: {
+          id: uploadId,
+          type: 0, // 0 - for github
+        },
+      });
+
+      return { id: fileUploaded.id, path: fileUploaded.localPath };
+    } catch (error) {
+      this.logger.error(`Error downloading from Github: ${error}`);
+      throw error;
+    }
+  }
+
+  async zipProject(sourceDir: string, zipFilePath: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const output = fs.createWriteStream(zipFilePath);
+      const archive = archiver('zip', { zlib: { level: 9 } });
+
+      output.on('close', resolve);
+      archive.on('error', reject);
+
+      archive.pipe(output);
+      archive.directory(sourceDir, false);
+      archive.finalize().catch(reject);
+    });
   }
 }
