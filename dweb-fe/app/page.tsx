@@ -78,6 +78,10 @@ export default function HomePage() {
       toast.error("Please enter a valid GitHub repository URL");
       return
     }
+    if (!repoUrl.startsWith("https://github.com")) {
+      toast.error("Please enter a valid GitHub repository URL");
+      return
+    }
 
     try {
       await uploadGithub({url: repoUrl});
@@ -109,17 +113,20 @@ export default function HomePage() {
   useEffect(() => {
     if (isConnected) {
       fetchData().catch(console.error);
+    } else {
+      setUploadId("");
+      setDeployed(false);
     }
   }, [isConnected]);
 
   useEffect(() => {
-    if (respUpload) {
+    if (!isUploading && respUpload) {
       setUploadId(respUpload.id);
     }
     if (statusResp && statusResp.status ==="completed") {
       setDeployed(true);
     }
-  }, [respUpload, statusResp]);
+  }, [isUploading, statusResp]);
 
   useEffect(() => {
     if (error) {

@@ -71,7 +71,13 @@ export function useDeploySrv() {
   function useDeployStatus(uploadId: string) {
     const {data, error, isLoading} = useSWR(uploadId && uploadId != "" ?`${backendUrl}/deploy/status/${uploadId}`: null,
       statusFetcher,
-      {refreshInterval: 5000} // Polling every 5s
+      {refreshInterval: (latestData) => {
+          if (!latestData || latestData.status !== "completed") {
+            return 5000; // Poll every 5 seconds if not complete
+          }
+          return 0; // Stop polling when status is complete
+        },
+      }
     )
 
     return {

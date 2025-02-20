@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {BadRequestException, Injectable, Logger} from '@nestjs/common';
 import { UploadGithub } from './dto/upload-github';
 import { simpleGit } from 'simple-git';
 import { generate } from './utils';
@@ -19,9 +19,13 @@ export class AppService {
   ) {}
 
   async uploadGithub(data: UploadGithub) {
+    const git = simpleGit();
+    const isPublicRepo = await this.isRepoPublic(data.url);
+    if (!isPublicRepo) {
+      throw new BadRequestException('Repository is not public');
+    }
     try {
       this.logger.log(`Uploading to Github: ${data.url}`);
-      const git = simpleGit();
       const gitLog = await git.listRemote([data.url, `refs/heads/main`]);
       const latestCommit = gitLog.split('\t')[0];
 
@@ -118,5 +122,13 @@ export class AppService {
         `Failed to start deployment: ${(error as Error).message}`,
       );
     }
+  }
+
+  async isRepoPublic(repoUrl: string): Promise<boolean> {
+    const resp = await fetch(repoUrl, {
+      method: 'GET',
+    });
+
+    return resp.status === 200;
   }
 }
