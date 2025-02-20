@@ -1,6 +1,7 @@
 "use client"
 
 import useSWRMutation from "swr/mutation"
+import {mutate} from "swr";
 
 const backendUrl = process.env.NEXT_PUBLIC_FILE_SRV_URL || "http://localhost:5100/api"
 
@@ -52,10 +53,15 @@ export function useFileSrv() {
     return trigger(payload)
   }
 
+  async function clearFilesCache() {
+    await mutate(backendUrl + "/files/upload/github", null, { revalidate: false });
+  }
+
   return {
     uploadGithub: uploadGithub,
     data,
     error,
     isMutating,
+    clearFilesCache
   }
 }

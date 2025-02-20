@@ -1,7 +1,7 @@
 "use client"
 
 import useSWRMutation from "swr/mutation"
-import useSWR from "swr";
+import useSWR, {mutate} from "swr";
 
 export const backendUrl = process.env.NEXT_PUBLIC_DEPLOY_SRV_URL || "http://localhost:5200/api"
 
@@ -87,11 +87,17 @@ export function useDeploySrv() {
     }
   }
 
+  async function clearDeployCache() {
+    await mutate(`${backendUrl}/deploy/status/${data?.uploadId}`, null, { revalidate: false });
+    await mutate(backendUrl + "/deploy/start", null, { revalidate: false });
+  }
+
   return {
     deploy,
     data,
     error,
     isMutating,
-    useDeployStatus
+    useDeployStatus,
+    clearDeployCache
   }
 }

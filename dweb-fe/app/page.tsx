@@ -17,7 +17,7 @@ import {encode} from "@ensdomains/content-hash";
 import {Loader2} from "lucide-react";
 
 export default function HomePage() {
-  const [repoUrl, setRepoUrl] = useState("https://github.com/hkirat/react-boilerplate");
+  const [repoUrl, setRepoUrl] = useState("");
   const [uploadId, setUploadId] = useState("");
   const [deployed, setDeployed] = useState(false);
   const [ensName, setEnsName] = useState([]);
@@ -25,8 +25,8 @@ export default function HomePage() {
 
   // hooks
   const {address, isConnected} = useAccount()
-  const {uploadGithub, isMutating: isUploading, data: respUpload} = useFileSrv();
-  const {useDeployStatus} = useDeploySrv();
+  const {uploadGithub, isMutating: isUploading, data: respUpload, clearFilesCache} = useFileSrv();
+  const {useDeployStatus, clearDeployCache} = useDeploySrv();
   const {data: statusResp} = useDeployStatus(uploadId);
   const {data: hash, error, writeContract} = useWriteContract();
   const {isLoading: isConfirming, isSuccess: isConfirmed} =
@@ -114,13 +114,21 @@ export default function HomePage() {
     if (isConnected) {
       fetchData().catch(console.error);
     } else {
+      setRepoUrl("");
       setUploadId("");
       setDeployed(false);
+      setSelectedEnsName(null);
+
+      clearFilesCache().then(() => {
+        clearDeployCache().then(() => {
+          setEnsName([]);
+        });
+      }).catch(console.error);
     }
   }, [isConnected]);
 
   useEffect(() => {
-    if (!isUploading && respUpload) {
+    if (!isUploading && respUpload && repoUrl) {
       setUploadId(respUpload.id);
     }
     if (statusResp && statusResp.status ==="completed") {
@@ -166,6 +174,7 @@ export default function HomePage() {
                 }}
                 placeholder="https://github.com/username/repo"
                 value={repoUrl}
+                disabled={!isConnected}
               />
             </div>
             {isConnected ?
