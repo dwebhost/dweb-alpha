@@ -146,7 +146,7 @@ export default function HomePage() {
     <main className="flex flex-col items-center max-w-screen-xl pt-14 dark:bg-gray-900">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-xl">Deploy your Website via dWeb</CardTitle>
+          <CardTitle className="text-xl">Deploy your Decentralize Website via dWeb</CardTitle>
           <CardDescription>Enter the URL of your GitHub repository to deploy with dWeb</CardDescription>
         </CardHeader>
         <CardContent>

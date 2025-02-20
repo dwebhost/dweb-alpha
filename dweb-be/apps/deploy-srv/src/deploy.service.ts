@@ -143,7 +143,12 @@ export class DeployService {
     }
   }
 
-  async updateIPFSCid(uploadId: string, ipfsCid: string, status: string) {
+  async updateIPFSCid(
+    uploadId: string,
+    ipfsCid: string,
+    status: string,
+    error: string,
+  ) {
     this.logger.log(`[DEPLOY] Updating IPFS CID for ${uploadId}: ${ipfsCid}`);
     // Update the database with the IPFS CID
     return this.prisma.deployment.upsert({
@@ -151,6 +156,7 @@ export class DeployService {
       update: {
         ipfsCid,
         status,
+        error,
         updatedAt: new Date(),
         deployedAt: new Date(),
       },
@@ -158,6 +164,7 @@ export class DeployService {
         uploadId,
         ipfsCid,
         status,
+        error,
         deployedAt: new Date(),
         createdAt: new Date(),
         updatedAt: new Date(),

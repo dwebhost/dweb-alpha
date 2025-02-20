@@ -39,13 +39,13 @@ async function fetchDomainsByOwner(ownerAddress: string) {
 }
 
 async function fetchENSData(ownerAddress: string) {
-  const url = "https://api.studio.thegraph.com/query/49574/enssepolia/version/latest";
+  // const url = "https://api.studio.thegraph.com/query/49574/enssepolia/version/latest";
   try {
     const variables = {
       owner: ownerAddress.toLowerCase(), // Convert to lowercase for consistency
     };
 
-    return  await request(url, query, variables);
+    return  await request(SUBGRAPH_URL!, query, variables);
   } catch (error) {
     console.error("Error fetching ENS data:", error);
   }

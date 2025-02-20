@@ -54,6 +54,7 @@ export class DeployProcessor extends WorkerHost {
       job.returnvalue.uploadId as string,
       job.returnvalue.ipfsCid as string,
       job.returnvalue.status as string,
+      job.returnvalue.error?.toString() || '',
     );
   }
 }
