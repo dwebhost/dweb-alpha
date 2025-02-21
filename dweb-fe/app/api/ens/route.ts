@@ -19,25 +19,6 @@ const query = gql`
   }
 `;
 
-/**
- * Fetch domains by owner address.
- * @param ownerAddress
- * @returns array of domains owned by the address
- */
-async function fetchDomainsByOwner(ownerAddress: string) {
-  try {
-    const variables = {
-      owner: ownerAddress.toLowerCase(), // Convert to lowercase for consistency
-    };
-
-    console.log('Fetching domains for owner:', ownerAddress);
-
-    return await request(SUBGRAPH_URL!, query, variables);
-  } catch (error) {
-    console.error('Error fetching data:', error);
-  }
-}
-
 async function fetchENSData(ownerAddress: string) {
   // const url = "https://api.studio.thegraph.com/query/49574/enssepolia/version/latest";
   try {
