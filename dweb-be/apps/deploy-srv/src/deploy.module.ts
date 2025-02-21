@@ -10,7 +10,10 @@ import { PrismaService } from '../../files-srv/src/prisma.service';
   imports: [
     ConfigModule.forRoot(),
     BullModule.forRoot({
-      connection: { host: 'localhost', port: 16379 },
+      connection: {
+        host: process.env.REDIS_HOST,
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+      },
     }),
     BullModule.registerQueue({ name: 'deploy-queue' }),
   ],

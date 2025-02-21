@@ -1,0 +1,40 @@
+# Use an official lightweight Node.js image
+FROM node:18-alpine AS builder
+
+# Set working directory inside the container
+WORKDIR /usr/src/app
+
+RUN npm install -g pnpm
+
+# Copy package manager files
+COPY package.json pnpm-lock.yaml ./
+
+# Install dependencies
+RUN pnpm install
+
+COPY prisma ./prisma
+RUN pnpm prisma generate
+
+# Copy the source code for deploy-srv
+COPY apps/deploy-srv ./apps/deploy-srv
+COPY apps/files-srv ./apps/files-srv
+COPY tsconfig.json nest-cli.json ./
+COPY .env .env
+
+# Build the service
+RUN pnpm build deploy-srv
+
+# Use a lightweight image for production
+FROM node:18-alpine AS runner
+WORKDIR /usr/src/app
+
+# Copy built files
+COPY --from=builder /usr/src/app/dist ./dist
+COPY --from=builder /usr/src/app/node_modules ./node_modules
+COPY --from=builder /usr/src/app/.env .env
+
+# Expose API port
+EXPOSE 3003
+
+# Run the service
+CMD ["node", "dist/apps/deploy-srv/main"]
