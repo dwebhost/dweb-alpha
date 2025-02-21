@@ -6,9 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "start:files-srv": "next start files-srv",
-    "start:deploy-srv": "next start deploy-srv"
+    "lint": "next lint"
   },
   "dependencies": {
     "@ensdomains/content-hash": "^3.0.0",

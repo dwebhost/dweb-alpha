@@ -32,9 +32,12 @@ WORKDIR /usr/src/app
 COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/.env .env
+COPY --from=builder /usr/src/app/package.json ./
+COPY --from=builder /usr/src/app/prisma ./prisma
 
 # Expose API port
 EXPOSE 3003
 
 # Run the service
-CMD ["node", "dist/apps/deploy-srv/main"]
+#CMD ["node", "dist/apps/deploy-srv/main"]
+CMD ["npm","run", "start:deploy"]
