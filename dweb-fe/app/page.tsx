@@ -15,18 +15,20 @@ import {ENS_REGISTRY_ABI, ENS_RESOLVER_ABI} from "@/lib/abi";
 import {namehash} from "viem";
 import {encode} from "@ensdomains/content-hash";
 import {Loader2} from "lucide-react";
+import {Textarea} from "@/components/ui/textarea";
 
 export default function HomePage() {
   const [repoUrl, setRepoUrl] = useState("");
   const [uploadId, setUploadId] = useState("");
   const [deployed, setDeployed] = useState(false);
+  const [deployedFailed, setDeployedFailed] = useState(false);
   const [ensName, setEnsName] = useState([]);
   const [selectedEnsName, setSelectedEnsName] = useState<string | null>(null);
 
   // hooks
   const {address, isConnected} = useAccount()
   const {uploadGithub, isMutating: isUploading, data: respUpload, clearFilesCache} = useFileSrv();
-  const {useDeployStatus, clearDeployCache} = useDeploySrv();
+  const {deploy, useDeployStatus, clearDeployCache} = useDeploySrv();
   const {data: statusResp} = useDeployStatus(uploadId);
   const {data: hash, error, writeContract} = useWriteContract();
   const {isLoading: isConfirming, isSuccess: isConfirmed} =
@@ -110,6 +112,13 @@ export default function HomePage() {
     }
   };
 
+  const retryDeployment = () => {
+    if (!uploadId) return;
+    setDeployed(false);
+    setDeployedFailed(false);
+    deploy({uploadId}).catch(console.error);
+  }
+
   useEffect(() => {
     if (isConnected) {
       fetchData().catch(console.error);
@@ -117,6 +126,7 @@ export default function HomePage() {
       setRepoUrl("");
       setUploadId("");
       setDeployed(false);
+      setDeployedFailed(false);
       setSelectedEnsName(null);
 
       clearFilesCache().then(() => {
@@ -131,8 +141,14 @@ export default function HomePage() {
     if (!isUploading && respUpload && repoUrl) {
       setUploadId(respUpload.id);
     }
-    if (statusResp && statusResp.status ==="completed") {
-      setDeployed(true);
+    if (statusResp) {
+      console.log("statusResp", statusResp);
+      if (statusResp.status === "failed") {
+        setDeployedFailed(true);
+      }
+      if (statusResp.status === "completed") {
+        setDeployed(true);
+      }
     }
   }, [isUploading, statusResp]);
 
@@ -179,7 +195,7 @@ export default function HomePage() {
             </div>
             {isConnected ?
               <Button onClick={handleUpload} disabled={uploadId !== "" || isUploading} className="w-full">
-                {uploadId ? `Deployed (${uploadId})` : isUploading ? "Uploading..." : "Upload"}
+                {uploadId ? `Uploaded (${uploadId})` : isUploading ? "Uploading..." : "Upload"}
               </Button> :
               <ConnectButton.Custom>
                 {({openConnectModal}) => (
@@ -213,7 +229,7 @@ export default function HomePage() {
               </div>
               {isConfirmed ?
                 <Button className="w-full" variant="outline">
-                  <a href={`http://${uploadId}.10kdevs.com/index.html`} target="_blank">
+                  <a href={`https://${selectedEnsName?.split('.')[0]}.istest.eth.limo`} target="_blank">
                     Visit Website
                   </a>
                 </Button> :
@@ -222,8 +238,21 @@ export default function HomePage() {
                 </Button>
               }
             </div>
-          </CardContent> :
+          </CardContent> : deployedFailed ?
           <CardContent>
+            <div className="flex flex-col justify-center">
+              <Label className="text-red-500 my-4">Deployment failed. Please try again.</Label>
+              <Textarea
+                value={statusResp?.error}
+                readOnly
+                className="bg-black text-green-400 font-mono text-sm border border-gray-700 p-2 resize-none h-40 overflow-auto"
+              />
+              <Button className="w-full mt-4" onClick={retryDeployment}>
+                Try Again
+              </Button>
+            </div>
+          </CardContent> :
+            <CardContent>
             <div className="flex justify-center">
               <Loader2 className="h-24 w-24 animate-spin"/>
             </div>

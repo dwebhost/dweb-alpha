@@ -1,4 +1,4 @@
-import {BadRequestException, Injectable, Logger} from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { UploadGithub } from './dto/upload-github';
 import { simpleGit } from 'simple-git';
 import { generate } from './utils';
@@ -19,27 +19,28 @@ export class AppService {
   ) {}
 
   async uploadGithub(data: UploadGithub) {
+    const repoUrl = data.url.trim();
     const git = simpleGit();
-    const isPublicRepo = await this.isRepoPublic(data.url);
+    const isPublicRepo = await this.isRepoPublic(repoUrl);
     if (!isPublicRepo) {
       throw new BadRequestException('Repository is not public');
     }
     try {
-      this.logger.log(`Uploading to Github: ${data.url}`);
-      const gitLog = await git.listRemote([data.url, `refs/heads/main`]);
+      this.logger.log(`Uploading to Github: ${repoUrl}`);
+      const gitLog = await git.listRemote([repoUrl, `refs/heads/main`]);
       const latestCommit = gitLog.split('\t')[0];
 
       const fileUploaded = await this.prisma.fileUpload.findFirst({
         where: {
           type: 0, // 0 - for github
-          githubUrl: data.url,
+          githubUrl: repoUrl,
         },
       });
       if (fileUploaded && fileUploaded.commitHash === latestCommit)
         return { id: fileUploaded.id, path: fileUploaded.localPath };
 
       const id = generate(); // asd12
-      const projectPath = await this.fileSrv.saveFilesFromGithub(id, data.url);
+      const projectPath = await this.fileSrv.saveFilesFromGithub(id, repoUrl);
 
       // call deploy service to deploy the project
       await this.startDeployment(id);
@@ -55,7 +56,7 @@ export class AppService {
         },
         create: {
           id,
-          githubUrl: data.url,
+          githubUrl: repoUrl,
           commitHash: latestCommit,
           type: 0, // 0 - for GitHub
           localPath: projectPath,
