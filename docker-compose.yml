@@ -10,10 +10,10 @@ services:
 
   file-server:
     build:
-      context: ./dweb-be  # ✅ Set correct build context
+      context: ./dweb-be
       dockerfile: Dockerfile.filesrv
     ports:
-      - "5100:5100"
+      - "${FILE_SERVER_PORT:-5100}:5100"
     volumes:
       - ./storage:/usr/src/app/storage
     env_file:
@@ -27,10 +27,10 @@ services:
 
   deploy-service:
     build:
-      context: ./dweb-be  # ✅ Set correct build context
+      context: ./dweb-be
       dockerfile: Dockerfile.deploysrv
     ports:
-      - "5200:5200"
+      - "${DEPLOY_SERVICE_PORT:-5200}:5200"
     env_file:
       - dweb-be/.env
     depends_on:
@@ -42,10 +42,10 @@ services:
 
   frontend:
     build:
-      context: ./dweb-fe  # ✅ Set correct build context
+      context: ./dweb-fe
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT:-3000}:3000"
     depends_on:
       deploy-service:
         condition: service_started
