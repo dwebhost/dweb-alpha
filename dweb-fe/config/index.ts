@@ -31,7 +31,7 @@ export const config = getDefaultConfig({
     // arbitrum,
     // base,
     // localChain,
-    ...(process.env.NEXT_PUBLIC_ENABLE_TESTNETS === 'true' ? [sepolia] : [mainnet]),
+    process.env.NEXT_PUBLIC_ENABLE_TESTNETS === 'true' ? sepolia : mainnet,
   ],
   ssr: true,
 });
