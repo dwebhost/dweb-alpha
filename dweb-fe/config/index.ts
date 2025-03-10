@@ -27,11 +27,11 @@ export const config = getDefaultConfig({
   chains: [
     // mainnet,
     // polygon,
-    optimism,
+    // optimism,
     // arbitrum,
     // base,
     // localChain,
-    ...(process.env.NEXT_PUBLIC_ENABLE_TESTNETS === 'true' ? [sepolia] : []),
+    ...(process.env.NEXT_PUBLIC_ENABLE_TESTNETS === 'true' ? [sepolia] : [mainnet]),
   ],
   ssr: true,
 });
