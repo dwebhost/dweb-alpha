@@ -15,6 +15,7 @@ services:
     ports:
       - "5100:5100"
     volumes:
+      - sqlite-db:/usr/src/app/database
       - ./storage:/usr/src/app/storage
     env_file:
       - dweb-be/.env
@@ -31,6 +32,8 @@ services:
       dockerfile: Dockerfile.deploysrv
     ports:
       - "5200:5200"
+    volumes:
+      - sqlite-db:/usr/src/app/database
     env_file:
       - dweb-be/.env
     depends_on:
@@ -57,3 +60,11 @@ services:
 
 networks:
   dweb-network:
+
+volumes:
+  sqlite-db:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./storage/sqlite-db
