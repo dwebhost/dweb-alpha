@@ -5,6 +5,14 @@ const SUBGRAPH_URL = process.env.SECRET_SUBGRAPH_URL
 
 const query = gql`
   query GetDomainsByOwner($owner: String!) {
+    domains(where: { owner: $owner}) {
+      id
+      name
+      expiryDate
+      owner {
+        id
+      }
+    }
     nameWrappeds(where: { owner: $owner}) {
       id
       name
@@ -48,7 +56,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Missing 'owner' parameter" }, { status: 400 })
     }
 
-    // const data = await fetchDomainsByOwner(ownerParam)
     const data = await fetchENSData(ownerParam)
     return NextResponse.json(data)
   } catch (err) {
