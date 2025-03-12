@@ -22,7 +22,7 @@ export default function HomePage() {
   const [uploadId, setUploadId] = useState("");
   const [deployed, setDeployed] = useState(false);
   const [deployedFailed, setDeployedFailed] = useState(false);
-  const [ensName, setEnsName] = useState([]);
+  const [ensName, setEnsName] = useState<{ value: string; label: string; }[]>([]);
   const [selectedEnsName, setSelectedEnsName] = useState<string | null>(null);
 
   // hooks
@@ -52,17 +52,26 @@ export default function HomePage() {
       const res = await fetch(`/api/ens?owner=${address?.toLowerCase()}`)
       const data = await res.json()
 
-      const fetchedDomains = data.nameWrappeds || []
+      const unwrappedOwner = data.domains || [];
+      const wrappedOwner = data.nameWrappeds || [];
+
+      const fetchedDomains = [...unwrappedOwner, ...wrappedOwner];
 
       console.log('Fetched domains:', fetchedDomains);
 
       // Convert the data to the shape needed by DomainList
-      const mapped = fetchedDomains.map((d: { expiryDate: string; name: string; }) => {
+      const mapped = fetchedDomains
+        .filter((d : { expiryDate: string; name: string; }) => {
+          return d.name.toLowerCase().endsWith(".eth");
+        })
+        .map((d: { expiryDate: string; name: string; }) => {
         return {
           value: d.name,
           label: d.name,
         };
       })
+
+      console.log("mapped", mapped);
 
       setEnsName(mapped);
     } catch (err) {
