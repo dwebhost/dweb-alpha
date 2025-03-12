@@ -62,7 +62,7 @@ export default function HomePage() {
       // Convert the data to the shape needed by DomainList
       const mapped = fetchedDomains
         .filter((d : { expiryDate: string; name: string; }) => {
-          return d.name.toLowerCase().endsWith(".eth");
+          return d.name.toLowerCase().endsWith(".eth") && !d.name.toLowerCase().startsWith("[");
         })
         .map((d: { expiryDate: string; name: string; }) => {
         return {
@@ -204,7 +204,7 @@ export default function HomePage() {
             </div>
             {isConnected ?
               <Button onClick={handleUpload} disabled={uploadId !== "" || isUploading} className="w-full">
-                {uploadId ? `Uploaded (${uploadId})` : isUploading ? "Uploading..." : "Upload"}
+                {uploadId ? `Deploy (${uploadId})` : isUploading ? "Deploying..." : "Deploy"}
               </Button> :
               <ConnectButton.Custom>
                 {({openConnectModal}) => (
