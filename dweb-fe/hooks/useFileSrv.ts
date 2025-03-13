@@ -3,7 +3,7 @@
 import useSWRMutation from "swr/mutation"
 import {mutate} from "swr";
 
-const backendUrl = process.env.NEXT_PUBLIC_FILE_SRV_URL || "http://localhost:5100/api"
+export const fileSrvUrl = process.env.NEXT_PUBLIC_FILE_SRV_URL || "http://localhost:5100/api"
 
 /**
  * Type for the payload we send to the API
@@ -11,6 +11,7 @@ const backendUrl = process.env.NEXT_PUBLIC_FILE_SRV_URL || "http://localhost:510
 interface UploadGithubPayload {
   url: string
   envJson: string
+  address: string
 }
 
 /**
@@ -45,7 +46,7 @@ export function useFileSrv() {
     data,         // holds success response data
     error,        // holds error object if the request fails
     isMutating,   // boolean for loading state
-  } = useSWRMutation(backendUrl + "/files/upload/github", uploadGithubFetcher)
+  } = useSWRMutation(fileSrvUrl + "/files/upload/github", uploadGithubFetcher)
 
   /**
    * Wrap trigger() in a user-friendly function.
@@ -55,7 +56,7 @@ export function useFileSrv() {
   }
 
   async function clearFilesCache() {
-    await mutate(backendUrl + "/files/upload/github", null, { revalidate: false });
+    await mutate(fileSrvUrl + "/files/upload/github", null, { revalidate: false });
   }
 
   return {

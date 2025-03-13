@@ -21,7 +21,6 @@ export class AppService {
   async uploadGithub(data: UploadGithub) {
     const repoUrl = data.url.trim();
     const envVarsJson = data.envJson;
-    // const git = simpleGit();
     const isPublicRepo = await this.isRepoPublic(repoUrl);
     if (!isPublicRepo) {
       throw new BadRequestException('Repository is not public');
@@ -50,6 +49,7 @@ export class AppService {
           create: {
             id,
             githubUrl: repoUrl,
+            address: data.address.trim(),
             outputDir: 'dist',
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -142,6 +142,7 @@ export class AppService {
             orderBy: {
               createdAt: 'desc',
             },
+            take: 1,
             include: {
               environment: true,
             },
@@ -161,5 +162,13 @@ export class AppService {
       this.logger.error(`Error fetching data: ${error}`);
       return null;
     }
+  }
+
+  getAllGithubUpload(address: string) {
+    return this.prisma.project.findMany({
+      where: {
+        address: address,
+      },
+    });
   }
 }

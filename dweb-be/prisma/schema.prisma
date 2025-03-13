@@ -16,12 +16,13 @@ datasource db {
 model Project {
   id          String       @id @unique
   githubUrl   String       @unique
+  address     String
   outputDir   String
   deployments Deployment[]
   createdAt   DateTime
   updatedAt   DateTime
 
-  @@index([githubUrl])
+  @@index([githubUrl, address])
 }
 
 model Deployment {

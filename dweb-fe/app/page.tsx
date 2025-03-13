@@ -5,7 +5,7 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/compo
 import {Label} from "@/components/ui/label";
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
-import {useFileSrv} from "@/hooks/useFileSrv";
+import {fileSrvUrl, useFileSrv} from "@/hooks/useFileSrv";
 import {toast} from "sonner";
 import {BaseError, useAccount, useReadContract, useWaitForTransactionReceipt, useWriteContract} from "wagmi";
 import {ConnectButton} from "@rainbow-me/rainbowkit";
@@ -14,7 +14,7 @@ import ComboboxComponent from "@/components/combobox";
 import {ENS_REGISTRY_ABI, ENS_RESOLVER_ABI} from "@/lib/abi";
 import {namehash} from "viem";
 import {encode} from "@ensdomains/content-hash";
-import {Loader2} from "lucide-react";
+import {Loader2, Plus} from "lucide-react";
 import {Textarea} from "@/components/ui/textarea";
 import EnvManager, {EnvVar} from "@/components/envmanager";
 
@@ -25,7 +25,9 @@ export default function HomePage() {
   const [deployedFailed, setDeployedFailed] = useState(false);
   const [ensName, setEnsName] = useState<{ value: string; label: string; }[]>([]);
   const [selectedEnsName, setSelectedEnsName] = useState<string | null>(null);
-  const [envVars, setEnvVars] = useState<EnvVar[]>([{ key: "", value: "" }]);
+  const [envVars, setEnvVars] = useState<EnvVar[]>([{key: "", value: ""}]);
+  const [projects, setProjects] = useState<string[]>([]);
+  const [isNewProject, setIsNewProject] = useState(false);
 
   // hooks
   const {address, isConnected} = useAccount()
@@ -63,15 +65,15 @@ export default function HomePage() {
 
       // Convert the data to the shape needed by DomainList
       const mapped = fetchedDomains
-        .filter((d : { expiryDate: string; name: string; }) => {
+        .filter((d: { expiryDate: string; name: string; }) => {
           return d.name.toLowerCase().endsWith(".eth") && !d.name.toLowerCase().startsWith("[");
         })
         .map((d: { expiryDate: string; name: string; }) => {
-        return {
-          value: d.name,
-          label: d.name,
-        };
-      })
+          return {
+            value: d.name,
+            label: d.name,
+          };
+        })
 
       console.log("mapped", mapped);
 
@@ -79,6 +81,41 @@ export default function HomePage() {
     } catch (err) {
       console.error("Error fetching ENS:", err)
       toast.error("Failed to fetch ENS domains.")
+    }
+  }
+
+  const latestDeployment = async (repoUrl: string) => {
+    try {
+      const encodedRepoUrl = encodeURIComponent(repoUrl);
+      const apiUrl = `${fileSrvUrl}/files/upload/github/${encodedRepoUrl}`;
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await response.json()
+      console.log("latestDeployment", data)
+      return data;
+    } catch (err) {
+      console.error("Error fetching latest deployment:", err)
+    }
+  }
+
+  const getAllProjects = async (address: string) => {
+    try {
+      const apiUrl = `${fileSrvUrl}/files/upload/github/address/${address}`;
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await response.json()
+      console.log("getAllProjects", data)
+      return data;
+    } catch (err) {
+      console.error("Error fetching all projects:", err)
     }
   }
 
@@ -97,17 +134,41 @@ export default function HomePage() {
     }
 
     try {
-      await uploadGithub({url: repoUrl, envJson: envVars.length > 1? JSON.stringify(envVars): ""});
+      await uploadGithub({url: repoUrl, envJson: envVars.length > 1 ? JSON.stringify(envVars) : "", address: address!});
     } catch (e) {
-        console.error(e);
-        toast.dismiss()
-        toast.error((e as Error).message);
+      console.error(e);
+      toast.dismiss()
+      toast.error((e as Error).message);
     }
   }
 
   const handleSelection = (value: string) => {
     setSelectedEnsName(value);
   };
+
+  const handleProjectSelection = (value: string) => {
+    setIsNewProject(false);
+    latestDeployment(value).then((data) => {
+      setRepoUrl(value);
+      if (data) {
+        const envText = data.deployments[0].environment.jsonText;
+        if (!envText || envText === "") return;
+        const envJson = JSON.parse(envText);
+        const envVars = envJson.map((e: { key: string; value: string; }) => ({key: e.key, value: e.value}));
+        setEnvVars(envVars);
+      }
+    }).catch(console.error);
+  }
+
+  const clearState = () => {
+    setRepoUrl("");
+    setUploadId("");
+    setDeployed(false);
+    setDeployedFailed(false);
+    setSelectedEnsName(null);
+    setEnvVars([{key: "", value: ""}]);
+    setProjects([]);
+  }
 
   const publishWeb = async () => {
     if (!statusResp || !selectedEnsName || !isConnected) return;
@@ -132,13 +193,16 @@ export default function HomePage() {
 
   useEffect(() => {
     if (isConnected && address) {
+      clearState();
       fetchData().catch(console.error);
+      getAllProjects(address).then((data) => {
+        if (data) {
+          const urls = data.map((d: { githubUrl: string; }) => d.githubUrl);
+          setProjects(urls);
+        }
+      }).catch(console.error);
     } else {
-      setRepoUrl("");
-      setUploadId("");
-      setDeployed(false);
-      setDeployedFailed(false);
-      setSelectedEnsName(null);
+      clearState();
 
       clearFilesCache().then(() => {
         clearDeployCache().then(() => {
@@ -194,17 +258,44 @@ export default function HomePage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="github-url" className="font-semibold">GitHub Repository URL</Label>
-              <Input
-                onChange={(e) => {
-                  setRepoUrl(e.target.value);
-                }}
-                placeholder="https://github.com/username/repo"
-                value={repoUrl}
-                disabled={!isConnected}
-              />
-            </div>
+            {projects && projects.length > 0 ?
+              <div className="space-y-2">
+                <Label className="font-semibold">Projects deployed</Label>
+                <div className="flex flex-row space-x-2">
+                  <ComboboxComponent options={projects.map((p) => ({value: p, label: p}))}
+                                     onSelect={(value) => handleProjectSelection(value)}/>
+                  <Button
+                    onClick={() => {
+                      setIsNewProject(!isNewProject);
+                      clearState();
+                    }}
+                    className="w-1/3">
+                    <Plus className="w-4 h-4"/> New Project
+                  </Button>
+                </div>
+                {isNewProject && <Input
+                    onChange={(e) => {
+                      setRepoUrl(e.target.value);
+                    }}
+                    placeholder="https://github.com/username/repo"
+                    value={repoUrl}
+                    disabled={!isConnected}
+                />}
+              </div>
+              :
+              <div className="space-y-2">
+                <Label htmlFor="github-url" className="font-semibold">GitHub Repository URL</Label>
+                <Input
+                  onChange={(e) => {
+                    setRepoUrl(e.target.value);
+                  }}
+                  placeholder="https://github.com/username/repo"
+                  value={repoUrl}
+                  disabled={!isConnected}
+                />
+              </div>
+            }
+            <hr className="my-8 border-b-blue-800"/>
             <EnvManager envVars={envVars} setEnvVars={setEnvVars} isDisabled={!isConnected}/>
             {isConnected ?
               <Button onClick={handleUpload} disabled={uploadId !== "" || isUploading} className="w-full">
@@ -227,18 +318,19 @@ export default function HomePage() {
       {uploadId && isConnected && <Card className="w-full max-w-md mt-8 md:max-w-xl">
           <CardHeader>
               <CardTitle className="text-xl">Deployment Status</CardTitle>
-              {deployed ? <CardDescription>Your website is successfully deployed to IPFS!</CardDescription> : <CardDescription>Deploying your website...to IPFS</CardDescription>}
+            {deployed ? <CardDescription>Your website is successfully deployed to IPFS!</CardDescription> :
+              <CardDescription>Deploying your website...to IPFS</CardDescription>}
           </CardHeader>
         {deployed ?
           <CardContent>
             <div className="space-y-2">
               <Label htmlFor="ipfs-cid">CID</Label>
-              <Input id="ipfs-cid" readOnly type="url" value={statusResp.ipfsCid} />
+              <Input id="ipfs-cid" readOnly type="url" value={statusResp.ipfsCid}/>
             </div>
             <div className="space-y-4 mt-4">
               <div className="space-y-2">
                 <Label htmlFor="ipfs-cid">ENS</Label>
-                <ComboboxComponent options={ensName} onSelect={handleSelection} disabled={!deployed} />
+                <ComboboxComponent options={ensName} onSelect={handleSelection} disabled={!deployed}/>
               </div>
               {isConfirmed ?
                 <Button className="w-full" variant="outline">
@@ -252,24 +344,24 @@ export default function HomePage() {
               }
             </div>
           </CardContent> : deployedFailed ?
-          <CardContent>
-            <div className="flex flex-col justify-center">
-              <Label className="text-red-500 my-4">Deployment failed. Please try again.</Label>
-              <Textarea
-                value={statusResp?.error}
-                readOnly
-                className="bg-black text-green-400 font-mono text-sm border border-gray-700 p-2 resize-none h-40 overflow-auto"
-              />
-              <Button className="w-full mt-4" onClick={retryDeployment}>
-                Try Again
-              </Button>
-            </div>
-          </CardContent> :
             <CardContent>
-            <div className="flex justify-center">
-              <Loader2 className="h-24 w-24 animate-spin"/>
-            </div>
-          </CardContent>
+              <div className="flex flex-col justify-center">
+                <Label className="text-red-500 my-4">Deployment failed. Please try again.</Label>
+                <Textarea
+                  value={statusResp?.error}
+                  readOnly
+                  className="bg-black text-green-400 font-mono text-sm border border-gray-700 p-2 resize-none h-40 overflow-auto"
+                />
+                <Button className="w-full mt-4" onClick={retryDeployment}>
+                  Try Again
+                </Button>
+              </div>
+            </CardContent> :
+            <CardContent>
+              <div className="flex justify-center">
+                <Loader2 className="h-24 w-24 animate-spin"/>
+              </div>
+            </CardContent>
         }
       </Card>}
     </main>

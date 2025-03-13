@@ -15,7 +15,6 @@ export class DeployController {
   // Check Deployment Status
   @Get('status/:deployId')
   async getStatus(@Param('deployId') deployId: number) {
-    console.log('deployId', deployId);
     return this.deployService.getDeployment(deployId);
   }
 }

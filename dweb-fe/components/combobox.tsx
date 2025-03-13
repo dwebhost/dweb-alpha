@@ -1,16 +1,20 @@
 "use client"
 
-import { useState } from "react";
-import { Command, CommandInput, CommandList, CommandItem } from "@/components/ui/command";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
+import {useState} from "react";
+import {Command, CommandInput, CommandList, CommandItem} from "@/components/ui/command";
+import {Popover, PopoverTrigger, PopoverContent} from "@/components/ui/popover";
+import {Button} from "@/components/ui/button";
 
 export type Option = {
   value: string;
   label: string;
 }
 
-export default function ComboboxComponent({ options, onSelect, disabled = false }: { options: Option[], onSelect: (value: string) => void, disabled?: boolean }) {
+export default function ComboboxComponent({options, onSelect, disabled = false}: {
+  options: Option[],
+  onSelect: (value: string) => void,
+  disabled?: boolean,
+}) {
   const [open, setOpen] = useState(false);
   const [selectedValue, setSelectedValue] = useState("");
 
@@ -24,7 +28,7 @@ export default function ComboboxComponent({ options, onSelect, disabled = false 
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="outline" className="w-full" disabled={disabled}>
-          {selectedValue ? options.find((option: Option) => option.value === selectedValue)?.label : "Select an ENS name"}
+          {selectedValue ? options.find((option: Option) => option.value === selectedValue)?.label : "Select option"}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-2">
