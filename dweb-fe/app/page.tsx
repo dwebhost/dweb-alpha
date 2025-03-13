@@ -129,7 +129,7 @@ export default function HomePage() {
   }
 
   useEffect(() => {
-    if (isConnected) {
+    if (isConnected && address) {
       fetchData().catch(console.error);
     } else {
       setRepoUrl("");
@@ -144,7 +144,7 @@ export default function HomePage() {
         });
       }).catch(console.error);
     }
-  }, [isConnected]);
+  }, [isConnected, address]);
 
   useEffect(() => {
     if (!isUploading && respUpload && repoUrl) {
