@@ -13,29 +13,41 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model FileUpload {
-  id         String   @id @unique
-  type       Int
-  githubUrl  String?
-  commitHash String?
-  fileHash   String?
-  localPath  String
-  createdAt  DateTime
-  updatedAt  DateTime
+model Project {
+  id          String       @id @unique
+  githubUrl   String       @unique
+  outputDir   String
+  deployments Deployment[]
+  createdAt   DateTime
+  updatedAt   DateTime
 
-  @@index([id, githubUrl, fileHash])
+  @@index([githubUrl])
 }
 
 model Deployment {
-  id         Int       @id @default(autoincrement())
-  uploadId   String    @unique
-  status     String
-  ensName    String?
-  ipfsCid    String?
-  deployedAt DateTime?
-  createdAt  DateTime
-  updatedAt  DateTime
-  error      String?
+  id          Int          @id @default(autoincrement())
+  status      String
+  commitHash  String?
+  ensName     String?
+  ipfsCid     String?
+  deployedAt  DateTime?
+  createdAt   DateTime
+  updatedAt   DateTime
+  error       String?
+  project     Project?     @relation(fields: [projectId], references: [id])
+  projectId   String?
+  environment Environment?
 
-  @@index([uploadId, ensName])
+  @@index([id, ensName])
+}
+
+model Environment {
+  id           Int        @id @default(autoincrement())
+  jsonText     String
+  createdAt    DateTime
+  updatedAt    DateTime
+  deployment   Deployment @relation(fields: [deploymentId], references: [id])
+  deploymentId Int        @unique
+
+  @@index([id])
 }

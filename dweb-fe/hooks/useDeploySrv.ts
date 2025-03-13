@@ -9,7 +9,7 @@ export const backendUrl = process.env.NEXT_PUBLIC_DEPLOY_SRV_URL || "http://loca
  * Type for the payload we send to the API
  */
 interface DeployPayload {
-  uploadId: string
+  deployId: string
 }
 
 /**
@@ -68,8 +68,8 @@ export function useDeploySrv() {
     return trigger(payload)
   }
 
-  function useDeployStatus(uploadId: string) {
-    const {data, error, isLoading} = useSWR(uploadId && uploadId != "" ?`${backendUrl}/deploy/status/${uploadId}`: null,
+  function useDeployStatus(deployId: string) {
+    const {data, error, isLoading} = useSWR(deployId && deployId != "" ?`${backendUrl}/deploy/status/${deployId}`: null,
       statusFetcher,
       {refreshInterval: (latestData) => {
           if (!latestData || latestData.status === "processing") {
@@ -88,7 +88,7 @@ export function useDeploySrv() {
   }
 
   async function clearDeployCache() {
-    await mutate(`${backendUrl}/deploy/status/${data?.uploadId}`, null, { revalidate: false });
+    await mutate(`${backendUrl}/deploy/status/${data?.deployId}`, null, { revalidate: false });
     await mutate(backendUrl + "/deploy/start", null, { revalidate: false });
   }
 

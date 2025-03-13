@@ -11,17 +11,19 @@ export class DeployProcessor extends WorkerHost {
   }
 
   async process(job: Job) {
-    const uploadId = job.data as string;
-    console.log(`[DEPLOY] Processing project: ${uploadId}`);
+    const deployId = job.data as number;
+    this.logger.log(`[DEPLOY] Processing deployment has ID: ${deployId}`);
 
     try {
       // Step 1: Get Code from File Server
-      const projectPath = await this.deployService.fetchProject(uploadId);
+      const [projectPath, uploadId] =
+        await this.deployService.fetchProject(deployId);
+      this.logger.log(`[DEPLOY] Project fetched: ${projectPath}`);
       await job.updateProgress(33);
 
       // Step 2: Build the frontend
       const buildPath = await this.deployService.buildProject(projectPath);
-      console.log(`[DEPLOY] Build completed: ${JSON.stringify(buildPath)}`);
+      this.logger.log(`[DEPLOY] Build completed: ${JSON.stringify(buildPath)}`);
       await job.updateProgress(66);
 
       // Step 3: Upload to IPFS
@@ -29,15 +31,16 @@ export class DeployProcessor extends WorkerHost {
         uploadId,
         projectPath,
       );
+      this.logger.log(`[DEPLOY] Uploaded to IPFS: ${ipfsCid}`);
       await job.updateProgress(100);
 
       // Mark job as completed
-      return { uploadId, status: 'completed', ipfsCid };
+      return { deployId, status: 'completed', ipfsCid };
     } catch (error: unknown) {
       this.logger.error(
-        `Failed to process project: ${uploadId} - err: ${JSON.stringify(error)}`,
+        `Failed to process project: ${deployId} - err: ${JSON.stringify(error)}`,
       );
-      return { uploadId, status: 'failed', error };
+      return { deployId, status: 'failed', error };
     }
   }
 
@@ -51,7 +54,7 @@ export class DeployProcessor extends WorkerHost {
       return;
     }
     await this.deployService.updateIPFSCid(
-      job.returnvalue.uploadId as string,
+      job.returnvalue.deployId as number,
       job.returnvalue.ipfsCid as string,
       job.returnvalue.status as string,
       job.returnvalue.error?.toString() || '',

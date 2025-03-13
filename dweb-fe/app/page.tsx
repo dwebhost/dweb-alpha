@@ -97,7 +97,7 @@ export default function HomePage() {
     }
 
     try {
-      await uploadGithub({url: repoUrl, envJson: JSON.stringify(envVars)});
+      await uploadGithub({url: repoUrl, envJson: envVars.length > 1? JSON.stringify(envVars): ""});
     } catch (e) {
         console.error(e);
         toast.dismiss()
@@ -127,7 +127,7 @@ export default function HomePage() {
     if (!uploadId) return;
     setDeployed(false);
     setDeployedFailed(false);
-    deploy({uploadId}).catch(console.error);
+    deploy({deployId: uploadId}).catch(console.error);
   }
 
   useEffect(() => {
@@ -150,7 +150,8 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!isUploading && respUpload && repoUrl) {
-      setUploadId(respUpload.id);
+      console.log("respUpload", respUpload);
+      setUploadId(respUpload.deployId);
     }
     if (statusResp) {
       console.log("statusResp", statusResp);
@@ -223,7 +224,7 @@ export default function HomePage() {
           </div>
         </CardContent>
       </Card>
-      {uploadId && isConnected && <Card className="w-full max-w-md mt-8">
+      {uploadId && isConnected && <Card className="w-full max-w-md mt-8 md:max-w-xl">
           <CardHeader>
               <CardTitle className="text-xl">Deployment Status</CardTitle>
               {deployed ? <CardDescription>Your website is successfully deployed to IPFS!</CardDescription> : <CardDescription>Deploying your website...to IPFS</CardDescription>}

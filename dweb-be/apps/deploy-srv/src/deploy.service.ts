@@ -1,31 +1,27 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import {
-  createWriteStream,
-  existsSync,
-  mkdirSync,
-  unlinkSync,
-  WriteStream,
-} from 'node:fs';
-import axios, { AxiosResponse } from 'axios';
+import { existsSync, mkdirSync } from 'node:fs';
 import { exec } from 'node:child_process';
-import { Open } from 'unzipper';
 import { getAllFiles } from './utils';
 import { PinataSDK } from 'pinata-web3';
 import { readFileSync } from 'fs';
 import { PrismaService } from '../../files-srv/src/prisma.service';
+import * as fs from 'node:fs';
+import { StartDeploy } from './dto/start-deploy';
+import { simpleGit } from 'simple-git';
+import * as path from 'path';
 
 @Injectable()
 export class DeployService {
   private readonly logger = new Logger(DeployService.name);
-  private fileServerUrl =
-    process.env.FILE_SERVICE_URL || 'http://localhost:5100';
   private buildPath = '/tmp/builds';
   private pinata = new PinataSDK({
     pinataJwt: process.env.PINATA_JWT,
     pinataGateway: process.env.PINATA_GATEWAY_URL,
   });
+  private githubBaseDir = path.join(__dirname, '../../storage/github');
+  private git = simpleGit();
 
   constructor(
     @InjectQueue('deploy-queue') private deployQueue: Queue,
@@ -36,51 +32,69 @@ export class DeployService {
     }
   }
 
-  async startDeploy(uploadId: string) {
-    await this.deployQueue.add(uploadId, uploadId, { removeOnComplete: true });
-
+  async startDeploy(input: StartDeploy) {
     // insert into database
-    await this.prisma.deployment.upsert({
-      where: { uploadId },
-      update: { status: 'processing' },
-      create: {
-        uploadId,
+    const deployment = await this.prisma.deployment.create({
+      data: {
         status: 'processing',
         createdAt: new Date(),
         updatedAt: new Date(),
+        project: {
+          connect: {
+            id: input.projectId,
+          },
+        },
+        environment: {
+          create: {
+            jsonText: input.envJson,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        },
       },
     });
+    await this.deployQueue.add(deployment.id.toString(), deployment.id, {
+      removeOnComplete: true,
+    });
 
-    return { uploadId, status: 'processing' };
+    return { deployId: deployment.id, status: 'processing' };
   }
 
-  async fetchProject(uploadId: string): Promise<string> {
-    this.logger.log(`[DEPLOY] Fetching project: ${uploadId}`);
+  async fetchProject(deployId: number) {
+    this.logger.log(`[DEPLOY] Fetching project with deployment: ${deployId}`);
 
-    const zipPath = `/tmp/builds/${uploadId}.zip`;
-    const extractPath = `${this.buildPath}/${uploadId}`;
-
-    // Download ZIP from File Server
-    const response: AxiosResponse<NodeJS.ReadableStream> = await axios.get(
-      `${this.fileServerUrl}/api/files/download/${uploadId}`,
-      { responseType: 'stream' },
-    );
-
-    const writer: WriteStream = createWriteStream(zipPath);
-    response.data.pipe(writer);
-
-    await new Promise<void>((resolve, reject) => {
-      writer.on('finish', resolve);
-      writer.on('error', reject);
+    const deployment = await this.prisma.deployment.findFirst({
+      where: { id: deployId },
+      include: {
+        project: true,
+        environment: true,
+      },
     });
-    const dirZip = await Open.file(zipPath);
-    await dirZip.extract({ path: extractPath });
+    if (!deployment) {
+      throw new Error(`Deployment not found: ${deployId}`);
+    }
 
-    // Clean up the zip file
-    unlinkSync(zipPath);
+    const projectPath = path.join(
+      this.githubBaseDir,
+      `${deployment.projectId}/${deployment.id}`,
+    );
+    const urlRepo = deployment.project ? deployment.project.githubUrl : '';
+    if (!fs.existsSync(projectPath)) {
+      fs.mkdirSync(projectPath, { recursive: true });
+      this.logger.log(`Cloning ${urlRepo} to ${projectPath}`);
+    }
 
-    this.logger.log(`[DEPLOY] Code extracted to: ${extractPath}`);
-    return extractPath;
+    await this.git.clone(urlRepo, projectPath);
+
+    if (deployment.environment) {
+      const jsonEnv = JSON.parse(deployment.environment.jsonText) as {
+        key: string;
+        value: string;
+      }[];
+      this.writeEnv(projectPath, jsonEnv);
+    }
+
+    return [projectPath, `${deployment.projectId}-${deployment.id}`];
   }
 
   buildProject(projectPath: string) {
@@ -144,44 +158,44 @@ export class DeployService {
   }
 
   async updateIPFSCid(
-    uploadId: string,
+    deployId: number,
     ipfsCid: string,
     status: string,
     error: string,
   ) {
-    this.logger.log(`[DEPLOY] Updating IPFS CID for ${uploadId}: ${ipfsCid}`);
+    this.logger.log(`[DEPLOY] Updating IPFS CID for ${deployId}: ${ipfsCid}`);
     // Update the database with the IPFS CID
-    return this.prisma.deployment.upsert({
-      where: { uploadId },
-      update: {
+    return this.prisma.deployment.update({
+      where: { id: deployId },
+      data: {
         ipfsCid,
         status,
         error,
         updatedAt: new Date(),
         deployedAt: new Date(),
-      },
-      create: {
-        uploadId,
-        ipfsCid,
-        status,
-        error,
-        deployedAt: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
       },
     });
   }
 
-  async getDeployment(uploadId: string) {
+  async getDeployment(deployId: number) {
     return this.prisma.deployment.findFirstOrThrow({
-      where: { uploadId },
+      where: { id: Number(deployId) },
       select: {
-        uploadId: true,
         ipfsCid: true,
         status: true,
         ensName: true,
         error: true,
       },
     });
+  }
+
+  writeEnv(projectPath: string, envVars: { key: string; value: string }[]) {
+    const envPath = `${projectPath}/.env`;
+    this.logger.log(`[DEPLOY] Writing env to: ${envPath}`);
+    const envFile = envVars
+      .map(({ key, value }) => `${key}=${value}`)
+      .join('\n');
+
+    return fs.writeFileSync(envPath, envFile);
   }
 }

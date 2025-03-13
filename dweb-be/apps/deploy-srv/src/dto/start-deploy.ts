@@ -1,10 +1,15 @@
 import { IsNotEmpty, IsString } from 'class-validator';
 
-export class UploadGithub {
+export class StartDeploy {
   @IsString()
   @IsNotEmpty()
-  url: string;
+  projectId: string;
 
   @IsString()
   envJson: string;
+}
+
+export interface DeployResponse {
+  deployId: number;
+  status: string;
 }
