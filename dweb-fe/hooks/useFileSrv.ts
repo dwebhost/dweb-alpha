@@ -10,6 +10,7 @@ const backendUrl = process.env.NEXT_PUBLIC_FILE_SRV_URL || "http://localhost:510
  */
 interface UploadGithubPayload {
   url: string
+  envJson: string
 }
 
 /**

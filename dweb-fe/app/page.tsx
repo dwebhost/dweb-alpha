@@ -16,6 +16,7 @@ import {namehash} from "viem";
 import {encode} from "@ensdomains/content-hash";
 import {Loader2} from "lucide-react";
 import {Textarea} from "@/components/ui/textarea";
+import EnvManager, {EnvVar} from "@/components/envmanager";
 
 export default function HomePage() {
   const [repoUrl, setRepoUrl] = useState("");
@@ -24,6 +25,7 @@ export default function HomePage() {
   const [deployedFailed, setDeployedFailed] = useState(false);
   const [ensName, setEnsName] = useState<{ value: string; label: string; }[]>([]);
   const [selectedEnsName, setSelectedEnsName] = useState<string | null>(null);
+  const [envVars, setEnvVars] = useState<EnvVar[]>([{ key: "", value: "" }]);
 
   // hooks
   const {address, isConnected} = useAccount()
@@ -95,7 +97,7 @@ export default function HomePage() {
     }
 
     try {
-      await uploadGithub({url: repoUrl});
+      await uploadGithub({url: repoUrl, envJson: JSON.stringify(envVars)});
     } catch (e) {
         console.error(e);
         toast.dismiss()
@@ -184,7 +186,7 @@ export default function HomePage() {
 
   return (
     <main className="flex flex-col items-center max-w-screen-xl pt-14 dark:bg-gray-900">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md md:max-w-xl">
         <CardHeader>
           <CardTitle className="text-xl">Deploy your Decentralize Website via dWeb</CardTitle>
           <CardDescription>Enter the URL of your GitHub repository to deploy with dWeb</CardDescription>
@@ -192,7 +194,7 @@ export default function HomePage() {
         <CardContent>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="github-url">GitHub Repository URL</Label>
+              <Label htmlFor="github-url" className="font-semibold">GitHub Repository URL</Label>
               <Input
                 onChange={(e) => {
                   setRepoUrl(e.target.value);
@@ -202,6 +204,7 @@ export default function HomePage() {
                 disabled={!isConnected}
               />
             </div>
+            <EnvManager envVars={envVars} setEnvVars={setEnvVars} isDisabled={!isConnected}/>
             {isConnected ?
               <Button onClick={handleUpload} disabled={uploadId !== "" || isUploading} className="w-full">
                 {uploadId ? `Deploy (${uploadId})` : isUploading ? "Deploying..." : "Deploy"}
