@@ -14,41 +14,54 @@ datasource db {
 }
 
 model Project {
-  id          String       @id @unique
-  githubUrl   String       @unique
-  address     String
-  outputDir   String
-  deployments Deployment[]
-  createdAt   DateTime
-  updatedAt   DateTime
+  id           String       @id @unique
+  githubUrl    String       @unique
+  githubBranch String
+  address      String
+  ensName      String?
+  deployments  Deployment[]
+  environment  Environment?
+  buildConfig  BuildConfig?
+  createdAt    DateTime
+  updatedAt    DateTime
 
   @@index([githubUrl, address])
 }
 
 model Deployment {
-  id          Int          @id @default(autoincrement())
-  status      String
-  commitHash  String?
-  ensName     String?
-  ipfsCid     String?
-  deployedAt  DateTime?
-  createdAt   DateTime
-  updatedAt   DateTime
-  error       String?
-  project     Project?     @relation(fields: [projectId], references: [id])
-  projectId   String?
-  environment Environment?
+  id         Int       @id @default(autoincrement())
+  status     String
+  commitHash String?
+  ipfsCid    String?
+  error      String?
+  deployedAt DateTime?
+  createdAt  DateTime
+  updatedAt  DateTime
+  project    Project?  @relation(fields: [projectId], references: [id])
+  projectId  String?
 
-  @@index([id, ensName])
+  @@index([id])
 }
 
 model Environment {
-  id           Int        @id @default(autoincrement())
-  jsonText     String
-  createdAt    DateTime
-  updatedAt    DateTime
-  deployment   Deployment @relation(fields: [deploymentId], references: [id])
-  deploymentId Int        @unique
+  id        Int      @id @default(autoincrement())
+  jsonText  String
+  createdAt DateTime
+  updatedAt DateTime
+  project   Project  @relation(fields: [projectId], references: [id])
+  projectId String   @unique
+
+  @@index([id])
+}
+
+model BuildConfig {
+  id        Int      @id @default(autoincrement())
+  jsonText  String
+  outputDir String
+  createdAt DateTime
+  updatedAt DateTime
+  project   Project  @relation(fields: [projectId], references: [id])
+  projectId String   @unique
 
   @@index([id])
 }

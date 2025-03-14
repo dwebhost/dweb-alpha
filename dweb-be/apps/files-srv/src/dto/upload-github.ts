@@ -9,6 +9,10 @@ export class UploadGithub {
   @IsNotEmpty()
   url: string;
 
+  @IsNotEmpty()
+  @IsString()
+  branch: string;
+
   @IsString()
   envJson: string;
 }

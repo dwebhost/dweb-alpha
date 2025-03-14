@@ -3,8 +3,6 @@ import { UploadGithub } from './dto/upload-github';
 import { generate } from './utils';
 import { FileService } from './file.service';
 import { PrismaService } from './prisma.service';
-import * as fs from 'node:fs';
-import * as archiver from 'archiver';
 import axios, { AxiosResponse } from 'axios';
 import { DeployResponse } from '../../deploy-srv/src/dto/start-deploy';
 
@@ -19,6 +17,7 @@ export class AppService {
   ) {}
 
   async uploadGithub(data: UploadGithub) {
+    console.log('Data:', JSON.stringify(data));
     const repoUrl = data.url.trim();
     const envVarsJson = data.envJson;
     const isPublicRepo = await this.isRepoPublic(repoUrl);
@@ -45,14 +44,27 @@ export class AppService {
           },
           update: {
             updatedAt: new Date(),
+            environment: {
+              update: {
+                jsonText: envVarsJson,
+                updatedAt: new Date(),
+              },
+            },
           },
           create: {
             id,
             githubUrl: repoUrl,
+            githubBranch: data.branch.trim(),
             address: data.address.trim(),
-            outputDir: 'dist',
             createdAt: new Date(),
             updatedAt: new Date(),
+            environment: {
+              create: {
+                jsonText: envVarsJson,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+            },
           },
         });
       }
@@ -65,37 +77,6 @@ export class AppService {
       this.logger.error(`Error uploading to Github: ${error}`);
       throw error;
     }
-  }
-
-  // async getUploadInfo(uploadId: string) {
-  //   try {
-  //     this.logger.log(`Downloading from Github: ${uploadId}`);
-  //     const fileUploaded = await this.prisma.fileUpload.findFirstOrThrow({
-  //       where: {
-  //         id: uploadId,
-  //         type: 0, // 0 - for github
-  //       },
-  //     });
-  //
-  //     return { id: fileUploaded.id, path: fileUploaded.localPath };
-  //   } catch (error) {
-  //     this.logger.error(`Error downloading from Github: ${error}`);
-  //     throw error;
-  //   }
-  // }
-
-  async zipProject(sourceDir: string, zipFilePath: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const output = fs.createWriteStream(zipFilePath);
-      const archive = archiver('zip', { zlib: { level: 9 } });
-
-      output.on('close', resolve);
-      archive.on('error', reject);
-
-      archive.pipe(output);
-      archive.directory(sourceDir, false);
-      archive.finalize().catch(reject);
-    });
   }
 
   async startDeployment(projectId: string, envVarsJson: string) {
@@ -143,10 +124,8 @@ export class AppService {
               createdAt: 'desc',
             },
             take: 1,
-            include: {
-              environment: true,
-            },
           },
+          environment: true,
         },
       });
 

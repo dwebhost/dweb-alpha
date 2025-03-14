@@ -56,8 +56,6 @@ export default function EnvManager({ isDisabled, envVars, setEnvVars }: EnvManag
 
   return (
     <div className="space-y-4">
-      <h2 className="font-semibold">Environment Variables</h2>
-
       {/* Upload File Button */}
       <label className="flex items-center gap-2 cursor-pointer">
         <Upload className="w-5 h-5" />

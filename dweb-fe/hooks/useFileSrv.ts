@@ -10,6 +10,7 @@ export const fileSrvUrl = process.env.NEXT_PUBLIC_FILE_SRV_URL || "http://localh
  */
 interface UploadGithubPayload {
   url: string
+  branch: string
   envJson: string
   address: string
 }

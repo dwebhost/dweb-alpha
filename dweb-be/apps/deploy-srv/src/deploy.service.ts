@@ -44,13 +44,6 @@ export class DeployService {
             id: input.projectId,
           },
         },
-        environment: {
-          create: {
-            jsonText: input.envJson,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        },
       },
     });
     await this.deployQueue.add(deployment.id.toString(), deployment.id, {
@@ -66,8 +59,16 @@ export class DeployService {
     const deployment = await this.prisma.deployment.findFirst({
       where: { id: deployId },
       include: {
-        project: true,
-        environment: true,
+        project: {
+          select: {
+            githubUrl: true,
+            environment: {
+              select: {
+                jsonText: true,
+              },
+            },
+          },
+        },
       },
     });
     if (!deployment) {
@@ -86,8 +87,8 @@ export class DeployService {
 
     await this.git.clone(urlRepo, projectPath);
 
-    if (deployment.environment) {
-      const jsonEnv = JSON.parse(deployment.environment.jsonText) as {
+    if (deployment.project && deployment.project.environment) {
+      const jsonEnv = JSON.parse(deployment.project.environment.jsonText) as {
         key: string;
         value: string;
       }[];
@@ -183,7 +184,6 @@ export class DeployService {
       select: {
         ipfsCid: true,
         status: true,
-        ensName: true,
         error: true,
       },
     });
