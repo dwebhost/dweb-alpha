@@ -134,7 +134,12 @@ export default function HomePage() {
     }
 
     try {
-      await uploadGithub({url: repoUrl, envJson: envVars.length > 1 ? JSON.stringify(envVars) : "", address: address!});
+      await uploadGithub({
+        url: repoUrl,
+        branch: "main",
+        envJson: envVars.length > 1 ? JSON.stringify(envVars) : "",
+        address: address!
+      });
     } catch (e) {
       console.error(e);
       toast.dismiss()

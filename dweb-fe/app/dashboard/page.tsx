@@ -17,7 +17,6 @@ import {useEffect, useState} from "react";
 import {toast} from "sonner";
 import {useFileSrv} from "@/hooks/useFileSrv";
 import {useAccount} from "wagmi";
-import {useRouter} from "next/navigation";
 
 export default function Dashboard() {
   const [repoUrl, setRepoUrl] = useState("");
@@ -25,7 +24,6 @@ export default function Dashboard() {
   const [rootDir, setRootDir] = useState("./");
   const [envVars, setEnvVars] = useState<EnvVar[]>([{key: "", value: ""}]);
 
-  const router = useRouter();
   const {address, isConnected} = useAccount()
   const {uploadGithub} = useFileSrv();
 
@@ -63,10 +61,10 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    if (!isConnected || !address) {
-      router.push("/");
+    if (!isConnected) {
+      // router.push("/");
     }
-  }, [isConnected, address])
+  }, [isConnected])
 
   return (
     <AlertDialog>
@@ -92,29 +90,30 @@ export default function Dashboard() {
                        value={branchName}
                        onChange={(e) => setBranchName(e.target.value)}/>
               </div>
-            </div>
-            <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="build-settings">
-                <AccordionTrigger className="font-bold">Build Settings</AccordionTrigger>
-                <AccordionContent>
-                  <div className="flex flex-col space-y-4">
-                    <div className="grid w-full items-center gap-2">
-                      <Label className="font-bold">Root Directory</Label>
-                      <Input id="repo"
-                             placeholder="./"
-                             value={rootDir}
-                             onChange={(e) => setRootDir(e.target.value)}/>
+
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="build-settings">
+                  <AccordionTrigger className="font-bold">Build Settings</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="flex flex-col space-y-4">
+                      <div className="grid w-full items-center gap-2">
+                        <Label className="font-bold">Root Directory</Label>
+                        <Input id="repo"
+                               placeholder="./"
+                               value={rootDir}
+                               onChange={(e) => setRootDir(e.target.value)}/>
+                      </div>
                     </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="envrionment-variables">
-                <AccordionTrigger className="font-bold">Environment Variables</AccordionTrigger>
-                <AccordionContent>
-                  <EnvManager envVars={envVars} setEnvVars={setEnvVars}/>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="envrionment-variables">
+                  <AccordionTrigger className="font-bold">Environment Variables</AccordionTrigger>
+                  <AccordionContent>
+                    <EnvManager envVars={envVars} setEnvVars={setEnvVars}/>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

@@ -148,6 +148,14 @@ export class AppService {
       where: {
         address: address,
       },
+      include: {
+        deployments: {
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: 1,
+        },
+      },
     });
   }
 }

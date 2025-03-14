@@ -16,7 +16,7 @@ export default function DashboardLayout({
         <div className="w-1/3">
           {ensdomains}
         </div>
-        <div className="w-1/3">
+        <div className="w-2/3">
           {deployments}
         </div>
       </div>
