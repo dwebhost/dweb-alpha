@@ -250,7 +250,7 @@ export default function HomePage() {
   }, [error, isConfirmed, isConfirming]);
 
   return (
-    <main className="flex flex-col items-center max-w-screen-xl pt-14 dark:bg-gray-900">
+    <main className="flex flex-col items-center max-w-screen-xl pt-14">
       <Card className="w-full max-w-md md:max-w-xl">
         <CardHeader>
           <CardTitle className="text-xl">Deploy your Decentralize Website via dWeb</CardTitle>

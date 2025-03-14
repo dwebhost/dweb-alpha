@@ -5,6 +5,7 @@ import '@rainbow-me/rainbowkit/styles.css';
 import {Header} from "@/components/header";
 import ContextProvider from "@/context";
 import {Toaster} from "@/components/ui/sonner";
+import {ThemeProvider} from "@/components/theme-provider";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -28,18 +29,25 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+    <html lang="en" suppressHydrationWarning>
+    <body
+      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+    >
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="dark"
+      enableSystem
+      disableTransitionOnChange
+    >
       <ContextProvider>
-        <Header />
+        <Header/>
         <main className="mx-auto max-w-screen-xl px-4 py-8">
           {children}
         </main>
-        <Toaster />
+        <Toaster/>
       </ContextProvider>
-      </body>
+    </ThemeProvider>
+    </body>
     </html>
   );
 }
