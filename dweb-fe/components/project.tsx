@@ -1,6 +1,7 @@
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {Github, GitMerge} from "lucide-react";
 import {Button} from "@/components/ui/button";
+import {useRouter} from "next/navigation";
 
 export interface Project {
   id: string;
@@ -16,6 +17,7 @@ type ProjectProps = {
 }
 export default function ProjectList(props: ProjectProps) {
   const {projects} = props;
+  const router = useRouter();
 
   if (!projects || !projects.length) {
     return (
@@ -28,7 +30,7 @@ export default function ProjectList(props: ProjectProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
       {projects.map((project, index) => (
-        <Card key={index} className="w-full min-w-1/2 hover:border-blue-100">
+        <Card key={index} className="w-full min-w-1/2 hover:border-blue-100" onClick={() => router.push(`/dashboard/${project.id}`)}>
           <CardHeader>
             <CardTitle>{project.projectName.split("/").pop()}</CardTitle>
             <CardDescription>{project.status}</CardDescription>

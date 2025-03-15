@@ -1,3 +1,7 @@
+"use client";
+
+import {usePathname} from "next/navigation";
+
 export default function DashboardLayout({
                                           children,
                                           ensdomains,
@@ -7,6 +11,19 @@ export default function DashboardLayout({
   ensdomains: React.ReactNode,
   deployments: React.ReactNode,
 }) {
+  const pathname = usePathname();
+
+  // Exclude layout for dynamic project pages (/dashboard/[projectId])
+  if (pathname.match(/^\/dashboard\/[^\/]+$/)) {
+    return (
+      <div className="flex flex-col">
+        <div className="flex justify-center">
+          {children}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col">
       <div className="flex justify-end">

@@ -20,4 +20,9 @@ export class AppController {
   async getAllGithubUpload(@Param('address') address: string) {
     return this.appService.getAllGithubUpload(address);
   }
+
+  @Get('project/:projectId')
+  async getProject(@Param('projectId') projectId: string) {
+    return this.appService.getProject(projectId);
+  }
 }

@@ -158,4 +158,22 @@ export class AppService {
       },
     });
   }
+
+  getProject(projectId: string) {
+    return this.prisma.project.findFirst({
+      where: {
+        id: projectId,
+      },
+      include: {
+        deployments: {
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: 1,
+        },
+        environment: true,
+        buildConfig: true,
+      },
+    });
+  }
 }
