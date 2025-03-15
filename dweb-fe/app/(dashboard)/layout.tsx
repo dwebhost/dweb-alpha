@@ -14,7 +14,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
 
   // Exclude layout for dynamic project pages (/dashboard/[projectId])
-  if (pathname.match(/^\/dashboard\/[^\/]+$/)) {
+  if (pathname.match(/^\/[^\/]+$/)) {
     return (
       <div className="flex flex-col">
         <div className="flex justify-center">
