@@ -1,9 +1,9 @@
 "use client";
 
 import {Button} from "@/components/ui/button";
-import {Plus} from "lucide-react";
+import {Loader2, Plus} from "lucide-react";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialog, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -23,9 +23,10 @@ export default function Dashboard() {
   const [branchName, setBranchName] = useState("main");
   const [rootDir, setRootDir] = useState("./");
   const [envVars, setEnvVars] = useState<EnvVar[]>([{key: "", value: ""}]);
+  const [isOpened, setIsOpened] = useState(false);
 
-  const {address, isConnected} = useAccount()
-  const {uploadGithub} = useFileSrv();
+  const {address} = useAccount()
+  const {uploadGithub, isMutating: isUploading} = useFileSrv();
 
   const clearState = () => {
     setRepoUrl("");
@@ -60,8 +61,14 @@ export default function Dashboard() {
     }
   };
 
+  useEffect(() => {
+    if (!isUploading) {
+      setIsOpened(false);
+    }
+  }, [isUploading]);
+
   return (
-    <AlertDialog>
+    <AlertDialog open={isOpened} onOpenChange={setIsOpened}>
       <AlertDialogTrigger asChild>
         <Button variant="secondary"> <Plus className="w-4 h-4"/> New Project</Button>
       </AlertDialogTrigger>
@@ -115,9 +122,9 @@ export default function Dashboard() {
                              onClick={() => setEnvVars([{key: "", value: ""}])}>
             Cancel
           </AlertDialogCancel>
-          <AlertDialogAction className="w-2/3" onClick={handleDeploy}>
-            Deploy
-          </AlertDialogAction>
+          <Button className="w-2/3" onClick={handleDeploy} disabled={isUploading}>
+            {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> :"Deploy"}
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

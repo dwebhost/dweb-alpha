@@ -26,12 +26,13 @@ type Props = {
   ipfsCid: string | undefined
   address: string
   projectId: string
+  deployId: number
   setFetching: (b: boolean) => void
 }
 
 const convertCidToContentHash = (cid: string) => `0x${encode("ipfs", cid)}`;
 
-export function AddEnsDialog({ipfsCid, address, projectId, setFetching}: Props) {
+export function AddEnsDialog({ipfsCid, address, projectId, deployId, setFetching}: Props) {
   const [ensName, setEnsName] = useState<{ value: string; label: string; }[]>([]);
   const [selectedEnsName, setSelectedEnsName] = useState<string | null>(null);
   const [isOpened, setIsOpened] = useState(false);
@@ -91,7 +92,7 @@ export function AddEnsDialog({ipfsCid, address, projectId, setFetching}: Props) 
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({projectId: projectId, ensDomain: ensName}),
+        body: JSON.stringify({projectId: projectId, ensDomain: ensName, deployId}),
       });
       return await response.json();
     } catch (err) {

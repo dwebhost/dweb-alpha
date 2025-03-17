@@ -4,7 +4,7 @@ import {fileSrvUrl} from "@/hooks/useFileSrv";
 import {useEffect, useState} from "react";
 import {Label} from "@/components/ui/label";
 import {Button} from "@/components/ui/button";
-import {ArrowUpRight, CircleCheck, CircleDotDashed, Github, GitMerge} from "lucide-react";
+import {ArrowUpRight, CircleCheck, CircleDotDashed, CircleX, Github, GitMerge, RotateCcw} from "lucide-react";
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from "@/components/ui/accordion";
 import EnvManager, {EnvVar} from "@/components/envmanager";
 import {useAccount} from "wagmi";
@@ -20,6 +20,7 @@ type ProjectInfo = {
 }
 
 type Deployment = {
+  id: number;
   commitHash?: string;
   ipfsCid?: string;
   status: string;
@@ -92,6 +93,7 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
           envJson: data.environment?.jsonText,
         };
         const deployment: Deployment = {
+          id: data.deployments[0].id,
           commitHash: data.deployments[0].commitHash,
           ipfsCid: data.deployments[0].ipfsCid,
           status: data.deployments[0].status,
@@ -114,18 +116,22 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
   return (
     <div className="flex flex-col w-full space-y-8 md:px-24">
       <div className="flex flex-col space-y-8 md:max-w-2xl md:mx-auto">
-        <div className="mb-10">
+        <div className="flex flex-row items-center justify-between mb-10">
           <Label className="font-bold text-3xl">{projectInfo.githubUrl.split("/").pop()}</Label>
+          <Button variant="secondary"><RotateCcw className="w-4 h-4"/> Re-Deploy</Button>
         </div>
         <div className="flex flex-row md:space-x-20 space-x-5">
           <div className={"flex flex-col space-y-2"}>
             <Label className="font-semibold">Status</Label>
-            {deployment.status === "completed" ?
+            {deployment.status === "ready" ?
               <div className="flex items-center gap-2">
-                <CircleCheck className="w-4 h-4"/> <span>{deployment.status}</span>
+                <CircleCheck className="w-4 h-4 text-green-500"/> <span>{deployment.status}</span>
+              </div> : deployment.status === "failed" ?
+              <div className="flex items-center gap-2">
+                <CircleX className="w-4 h-4 text-red-500"/> <span>{deployment.status}</span>
               </div> :
               <div className="flex items-center gap-2">
-                <CircleDotDashed className="w-4 h-4"/> <span>{deployment.status}</span>
+                <CircleDotDashed className="w-4 h-4 text-yellow-500"/> <span>{deployment.status}</span>
               </div>
             }
           </div>
@@ -140,11 +146,7 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
         </div>
         <div className="flex flex-col space-y-4">
           <Label className="font-semibold">IPFS CID</Label>
-          {deployment.ipfsCid ? (
-            <Input id="ipfs_cid" disabled={true} value={deployment.ipfsCid}/>
-          ) : (
-            <Button variant="secondary">Claim ENS</Button>
-          )}
+          <Input id="ipfs_cid" disabled={true} value={deployment.ipfsCid??"Pending"}/>
         </div>
         <div className="flex flex-col space-y-4">
           <Label className="font-semibold">Ens Domain</Label>
@@ -158,6 +160,7 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
                 ipfsCid={deployment.ipfsCid}
                 address={projectInfo.address}
                 projectId={projectId}
+                deployId={deployment.id}
                 setFetching={setIsFetching}/>
             )}
           </div>

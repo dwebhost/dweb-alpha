@@ -1,5 +1,5 @@
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import {Github, GitMerge} from "lucide-react";
+import {CircleCheck, CircleDotDashed, CircleX, Github, GitMerge} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {useRouter} from "next/navigation";
 
@@ -30,10 +30,21 @@ export default function ProjectList(props: ProjectProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
       {projects.map((project, index) => (
-        <Card key={index} className="w-full min-w-1/2 hover:border-blue-100 cursor-pointer" onClick={() => router.push(`/${project.id}`)}>
-          <CardHeader>
-            <CardTitle>{project.projectName.split("/").pop()}</CardTitle>
-            <CardDescription>{project.status}</CardDescription>
+        <Card key={index} className="w-full min-w-1/2 hover:border-blue-100 cursor-pointer"
+              onClick={() => router.push(`/${project.id}`)}>
+          <CardHeader className="flex flex-row justify-between items-center">
+            <div className="space-y-1">
+              <CardTitle className="text-xl">{project.projectName.split("/").pop()}</CardTitle>
+              <CardDescription>{project.status}</CardDescription>
+            </div>
+            <div>
+              {project.status === "ready" ? (
+                <CircleCheck className="w-10 h-10 text-green-500"/>) : project.status === "failed" ? (
+                <CircleX className="w-10 h-10 text-red-500"/>
+              ) : (
+                <CircleDotDashed className="w-10 h-10 text-yellow-500"/>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <Button
@@ -43,7 +54,7 @@ export default function ProjectList(props: ProjectProps) {
             >
               <Github className="w-4 h-4"/> {project.projectName}
             </Button>
-            <div className="flex items-center gap-2 mt-4">
+            <div className="flex items-center gap-2 mt-2">
               <GitMerge className="w-4 h-4"/>
               <p className="italic">{project.branch}</p>
             </div>

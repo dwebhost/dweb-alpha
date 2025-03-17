@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class UpdateEns {
   @IsString()
@@ -8,4 +8,8 @@ export class UpdateEns {
   @IsString()
   @IsNotEmpty()
   ensDomain: string;
+
+  @IsNumber()
+  @IsNotEmpty()
+  deployId: number;
 }

@@ -207,6 +207,17 @@ export class DeployService {
       data: {
         ensName: input.ensDomain,
         updatedAt: new Date(),
+        deployments: {
+          update: {
+            where: {
+              id: input.deployId,
+            },
+            data: {
+              status: 'ready',
+              updatedAt: new Date(),
+            },
+          },
+        },
       },
     });
   }

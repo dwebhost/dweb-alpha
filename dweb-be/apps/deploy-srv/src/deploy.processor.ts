@@ -35,7 +35,7 @@ export class DeployProcessor extends WorkerHost {
       await job.updateProgress(100);
 
       // Mark job as completed
-      return { deployId, status: 'completed', ipfsCid };
+      return { deployId, status: 'deployed', ipfsCid };
     } catch (error: unknown) {
       this.logger.error(
         `Failed to process project: ${deployId} - err: ${JSON.stringify(error)}`,
