@@ -1,20 +1,16 @@
 import { IsNotEmpty, IsString } from 'class-validator';
 
-export class UploadGithub {
+export class Redeploy {
   @IsString()
   @IsNotEmpty()
-  address: string;
-
-  @IsString()
-  @IsNotEmpty()
-  url: string;
-
-  @IsNotEmpty()
-  @IsString()
-  branch: string;
+  projectId: string;
 
   @IsString()
   envJson: string;
+
+  @IsString()
+  @IsNotEmpty()
+  address: string;
 
   @IsString()
   @IsNotEmpty()

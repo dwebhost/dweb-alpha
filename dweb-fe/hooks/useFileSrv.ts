@@ -13,6 +13,8 @@ interface UploadGithubPayload {
   branch: string
   envJson: string
   address: string
+  message: string
+  signature: string
 }
 
 /**

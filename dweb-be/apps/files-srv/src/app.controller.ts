@@ -1,13 +1,30 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { AppService } from './app.service';
 import { UploadGithub } from './dto/upload-github';
+import { verifySignature } from '../../../ultils/helper';
 
 @Controller('api/files')
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Post('upload/github')
-  uploadGithub(@Body() data: UploadGithub) {
+  async uploadGithub(@Body() data: UploadGithub) {
+    // verify the signature
+    const isValidate = await verifySignature(
+      data.address,
+      data.message,
+      data.signature,
+    );
+    if (!isValidate) {
+      throw new BadRequestException('Invalid signature');
+    }
     return this.appService.uploadGithub(data);
   }
 

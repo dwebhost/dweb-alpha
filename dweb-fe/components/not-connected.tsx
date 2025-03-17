@@ -25,7 +25,7 @@ export default function NotConnected() {
             )}
           </ConnectButton.Custom>
           <p className="text-xs text-gray-500 mt-3">
-            Don't have a wallet? Get one using <a href="https://metamask.io" target="_blank" className="text-blue-400 hover:underline">MetaMask</a> or <a href="https://rainbow.me" target="_blank" className="text-blue-400 hover:underline">Rainbow</a>.
+            Do not have a wallet? Get one using <a href="https://metamask.io" target="_blank" className="text-blue-400 hover:underline">MetaMask</a> or <a href="https://rainbow.me" target="_blank" className="text-blue-400 hover:underline">Rainbow</a>.
           </p>
         </CardContent>
       </Card>

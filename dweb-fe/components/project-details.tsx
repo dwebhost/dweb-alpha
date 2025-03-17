@@ -7,7 +7,7 @@ import {Button} from "@/components/ui/button";
 import {ArrowUpRight, CircleCheck, CircleDotDashed, CircleX, Github, GitMerge, RotateCcw} from "lucide-react";
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from "@/components/ui/accordion";
 import EnvManager, {EnvVar} from "@/components/envmanager";
-import {useAccount} from "wagmi";
+import {useAccount, useSignMessage} from "wagmi";
 import {Input} from "@/components/ui/input";
 import {AddEnsDialog} from "@/components/add-ens-dialog";
 import {deploySrvUrl} from "@/hooks/useDeploySrv";
@@ -66,7 +66,8 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
   const [rootDir, setRootDir] = useState("./");
   const [isFetching, setIsFetching] = useState(true);
 
-  const {isConnected} = useAccount();
+  const {isConnected, address} = useAccount();
+  const { signMessageAsync } = useSignMessage();
 
   const getProject = async (projectId: string) => {
     try {
@@ -85,13 +86,21 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
 
   const handleReDeploy = async () => {
     try {
-      const apiUrl = `${deploySrvUrl}/deploy/start`;
+      const message = `Re-deploy ${projectInfo?.githubUrl} at ${Date.now()}`;
+      const signature = await signMessageAsync({ message });
+      const apiUrl = `${deploySrvUrl}/deploy/redeploy`;
       const response = await fetch(apiUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({projectId: projectId, envJson: JSON.stringify(envVars)}),
+        body: JSON.stringify({
+          projectId: projectId,
+          envJson: JSON.stringify(envVars),
+          address: address,
+          message: message,
+          signature: signature,
+        }),
       });
       const data = await response.json();
       console.log("data", data);

@@ -47,6 +47,17 @@ export class DeployService {
         },
       },
     });
+
+    await this.prisma.environment.update({
+      where: {
+        projectId: input.projectId,
+      },
+      data: {
+        jsonText: input.envJson,
+        updatedAt: new Date(),
+      },
+    });
+
     await this.deployQueue.add(deployment.id.toString(), deployment.id, {
       removeOnComplete: true,
     });

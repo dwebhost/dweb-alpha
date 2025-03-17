@@ -16,7 +16,7 @@ import EnvManager, {EnvVar} from "@/components/envmanager";
 import {useEffect, useState} from "react";
 import {toast} from "sonner";
 import {useFileSrv} from "@/hooks/useFileSrv";
-import {useAccount} from "wagmi";
+import {useAccount, useSignMessage} from "wagmi";
 
 export default function Dashboard() {
   const [repoUrl, setRepoUrl] = useState("");
@@ -26,6 +26,7 @@ export default function Dashboard() {
   const [isOpened, setIsOpened] = useState(false);
 
   const {address} = useAccount()
+  const { signMessageAsync } = useSignMessage();
   const {uploadGithub, isMutating: isUploading, data: respUpload} = useFileSrv();
 
   const clearState = () => {
@@ -47,11 +48,15 @@ export default function Dashboard() {
     }
 
     try {
+      const message = `Deploy ${repoUrl} on branch ${branchName} at ${Date.now()}`;
+      const signature = await signMessageAsync({ message });
       await uploadGithub({
         url: repoUrl,
         branch: branchName,
         envJson: envVars.length > 1 ? JSON.stringify(envVars) : "",
-        address: address!
+        address: address!,
+        message,
+        signature
       });
     } catch (e) {
       console.error(e);
