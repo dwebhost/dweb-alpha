@@ -12,6 +12,7 @@ interface UploadGithubPayload {
   url: string
   branch: string
   envJson: string
+  outputDir: string
   address: string
   message: string
   signature: string
@@ -59,7 +60,7 @@ export function useFileSrv() {
   }
 
   async function clearFilesCache() {
-    await mutate(fileSrvUrl + "/files/upload/github", null, { revalidate: false });
+    await mutate(fileSrvUrl + "/files/upload/github", null, {revalidate: false});
   }
 
   return {

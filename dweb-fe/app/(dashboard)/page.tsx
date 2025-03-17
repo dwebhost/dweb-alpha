@@ -21,7 +21,7 @@ import {useAccount, useSignMessage} from "wagmi";
 export default function Dashboard() {
   const [repoUrl, setRepoUrl] = useState("");
   const [branchName, setBranchName] = useState("main");
-  const [rootDir, setRootDir] = useState("./");
+  const [outputDir, setOutputDir] = useState("dist");
   const [envVars, setEnvVars] = useState<EnvVar[]>([{key: "", value: ""}]);
   const [isOpened, setIsOpened] = useState(false);
 
@@ -32,7 +32,7 @@ export default function Dashboard() {
   const clearState = () => {
     setRepoUrl("");
     setBranchName("main");
-    setRootDir("./");
+    setOutputDir("dist");
     setEnvVars([{key: "", value: ""}]);
   }
 
@@ -54,6 +54,7 @@ export default function Dashboard() {
         url: repoUrl,
         branch: branchName,
         envJson: envVars.length > 1 ? JSON.stringify(envVars) : "",
+        outputDir,
         address: address!,
         message,
         signature
@@ -104,11 +105,11 @@ export default function Dashboard() {
                   <AccordionContent>
                     <div className="flex flex-col space-y-4">
                       <div className="grid w-full items-center gap-2">
-                        <Label className="font-bold">Root Directory</Label>
+                        <Label className="font-bold">Output Directory</Label>
                         <Input id="repo"
-                               placeholder="./"
-                               value={rootDir}
-                               onChange={(e) => setRootDir(e.target.value)}/>
+                               placeholder="dist"
+                               value={outputDir}
+                               onChange={(e) => setOutputDir(e.target.value)}/>
                       </div>
                     </div>
                   </AccordionContent>

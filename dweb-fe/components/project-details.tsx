@@ -24,6 +24,7 @@ type ProjectInfo = {
 type Deployment = {
   id: number;
   commitHash?: string;
+  commitTitle?: string;
   ipfsCid?: string;
   status: string;
   deployedAt: string;
@@ -64,7 +65,7 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
   const [projectInfo, setProjectInfo] = useState<ProjectInfo | null>(null);
   const [deployment, setDeployment] = useState<Deployment | null>(null);
   const [envVars, setEnvVars] = useState<EnvVar[]>([{key: "", value: ""}]);
-  const [rootDir, setRootDir] = useState("./");
+  const [outputDir, setOutputDir] = useState("dist");
   const [isFetching, setIsFetching] = useState(true);
 
   const {isConnected, address} = useAccount();
@@ -124,15 +125,18 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
         const deployment: Deployment = {
           id: data.deployments[0].id,
           commitHash: data.deployments[0].commitHash,
+          commitTitle: data.deployments[0].commitTitle,
           ipfsCid: data.deployments[0].ipfsCid,
           status: data.deployments[0].status,
           deployedAt: data.deployments[0].createdAt,
         }
+        const outputDir = data.buildConfig?.outputDir ?? "dist";
         const envVars: EnvVar[] = projectInfo.envJson ? JSON.parse(projectInfo.envJson) : [{key: "", value: ""}];
 
         setProjectInfo(projectInfo);
         setDeployment(deployment);
         setEnvVars(envVars);
+        setOutputDir(outputDir);
         setIsFetching(false);
       });
     }
@@ -207,8 +211,13 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
             </Button>
             <div className="flex items-center gap-2">
               <GitMerge className="w-4 h-4"/>
-              <p className="italic">{projectInfo.githubBranch}</p>
+              <span className="italic">{projectInfo.githubBranch}</span>
             </div>
+            {deployment.commitTitle && (
+              <Label className="italic">
+                {deployment.commitHash && `(${deployment.commitHash.slice(0, 6)})`} {deployment.commitTitle}
+              </Label>
+            )}
           </div>
         </div>
       </div>
@@ -218,8 +227,8 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
           <AccordionContent>
             <div className="flex flex-col space-y-4">
               <div className="grid w-full items-center gap-2">
-                <Label className="font-bold">Root Directory</Label>
-                <Input id="root_dir" value={rootDir} onChange={e => setRootDir(e.target.value)}/>
+                <Label className="font-bold">Output Directory</Label>
+                <Input id="root_dir" value={outputDir} onChange={e => setOutputDir(e.target.value)}/>
               </div>
             </div>
           </AccordionContent>

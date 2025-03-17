@@ -17,6 +17,9 @@ export class UploadGithub {
   envJson: string;
 
   @IsString()
+  outputDir: string;
+
+  @IsString()
   @IsNotEmpty()
   message: string;
 

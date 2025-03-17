@@ -74,8 +74,15 @@ export class DeployService {
         project: {
           select: {
             githubUrl: true,
+            githubBranch: true,
             environment: {
               select: {
+                jsonText: true,
+              },
+            },
+            buildConfig: {
+              select: {
+                outputDir: true,
                 jsonText: true,
               },
             },
@@ -86,18 +93,49 @@ export class DeployService {
     if (!deployment) {
       throw new Error(`Deployment not found: ${deployId}`);
     }
+    const outputDir = deployment.project?.buildConfig?.outputDir || 'dist';
 
     const projectPath = path.join(
       this.githubBaseDir,
       `${deployment.projectId}/${deployment.id}`,
     );
-    const urlRepo = deployment.project ? deployment.project.githubUrl : '';
+    let urlRepo = deployment.project ? deployment.project.githubUrl : '';
+    if (!urlRepo || urlRepo === '') {
+      throw new Error(
+        `No GitHub URL found for project: ${deployment.projectId}`,
+      );
+    }
+    if (!urlRepo.endsWith('.git')) {
+      urlRepo += '.git';
+    }
     if (!fs.existsSync(projectPath)) {
       fs.mkdirSync(projectPath, { recursive: true });
       this.logger.log(`Cloning ${urlRepo} to ${projectPath}`);
     }
+    try {
+      await this.git.clone(urlRepo, projectPath, [
+        `--branch=${deployment.project?.githubBranch || 'main'}`,
+        '--single-branch',
+      ]);
+    } catch (error) {
+      this.logger.error(`Failed to clone project: ${error}`);
+      throw error;
+    }
 
-    await this.git.clone(urlRepo, projectPath);
+    this.logger.log(`[DEPLOY] Cloned project to: ${projectPath}`);
+
+    const repoGit = simpleGit(projectPath);
+    let commitHash = '';
+    let commitTitle = '';
+    const log = await repoGit.log({ maxCount: 1 });
+
+    if (log.latest) {
+      commitHash = log.latest.hash;
+      commitTitle = log.latest.message.split('\n')[0];
+
+      console.log(`[GIT] Latest commit hash: ${commitHash}`);
+      console.log(`[GIT] Latest commit title: ${commitTitle}`);
+    }
 
     if (deployment.project && deployment.project.environment) {
       if (
@@ -112,7 +150,13 @@ export class DeployService {
       }
     }
 
-    return [projectPath, `${deployment.projectId}-${deployment.id}`];
+    return [
+      projectPath,
+      `${deployment.projectId}-${deployment.id}`,
+      commitHash,
+      commitTitle,
+      outputDir,
+    ];
   }
 
   buildProject(projectPath: string) {
@@ -139,10 +183,10 @@ export class DeployService {
     });
   }
 
-  async uploadToIPFS(uploadId: string, buildPath: string) {
+  async uploadToIPFS(uploadId: string, buildPath: string, outputDir: string) {
     this.logger.log(`[DEPLOY] Uploading to IPFS: ${buildPath}`);
     try {
-      const distPath = `${buildPath}/dist`;
+      const distPath = `${buildPath}/${outputDir}`;
 
       const allFiles = getAllFiles(distPath);
       const fileNames = allFiles.map((file) =>
@@ -180,6 +224,8 @@ export class DeployService {
     ipfsCid: string,
     status: string,
     error: string,
+    commitHash: string,
+    commitTitle: string,
   ) {
     this.logger.log(`[DEPLOY] Updating IPFS CID for ${deployId}: ${ipfsCid}`);
     // Update the database with the IPFS CID
@@ -189,6 +235,8 @@ export class DeployService {
         ipfsCid,
         status,
         error,
+        commitHash,
+        commitTitle,
         updatedAt: new Date(),
         deployedAt: new Date(),
       },

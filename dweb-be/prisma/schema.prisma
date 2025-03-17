@@ -29,16 +29,17 @@ model Project {
 }
 
 model Deployment {
-  id         Int       @id @default(autoincrement())
-  status     String
-  commitHash String?
-  ipfsCid    String?
-  error      String?
-  deployedAt DateTime?
-  createdAt  DateTime
-  updatedAt  DateTime
-  project    Project?  @relation(fields: [projectId], references: [id])
-  projectId  String?
+  id          Int       @id @default(autoincrement())
+  status      String
+  commitHash  String?
+  commitTitle String?
+  ipfsCid     String?
+  error       String?
+  deployedAt  DateTime?
+  createdAt   DateTime
+  updatedAt   DateTime
+  project     Project?  @relation(fields: [projectId], references: [id])
+  projectId   String?
 
   @@index([id])
 }

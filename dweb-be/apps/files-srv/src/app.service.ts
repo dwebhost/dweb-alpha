@@ -26,9 +26,6 @@ export class AppService {
     }
     try {
       this.logger.log(`Uploading to Github: ${repoUrl}`);
-      // const gitLog = await git.listRemote([repoUrl, `refs/heads/main`]);
-      // const latestCommit = gitLog.split('\t')[0];
-
       const projectInfo = await this.prisma.project.findFirst({
         where: {
           githubUrl: repoUrl,
@@ -36,39 +33,45 @@ export class AppService {
       });
 
       const id = projectInfo ? projectInfo.id : generate();
-      if (!projectInfo) {
-        // save project info to db
-        await this.prisma.project.upsert({
-          where: {
-            githubUrl: repoUrl,
-          },
-          update: {
-            updatedAt: new Date(),
-            environment: {
-              update: {
-                jsonText: envVarsJson,
-                updatedAt: new Date(),
-              },
+      // save project info to db
+      await this.prisma.project.upsert({
+        where: {
+          githubUrl: repoUrl,
+        },
+        update: {
+          updatedAt: new Date(),
+          githubBranch: data.branch.trim(),
+          environment: {
+            update: {
+              jsonText: envVarsJson,
+              updatedAt: new Date(),
             },
           },
-          create: {
-            id,
-            githubUrl: repoUrl,
-            githubBranch: data.branch.trim(),
-            address: data.address.trim(),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            environment: {
-              create: {
-                jsonText: envVarsJson,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-              },
+        },
+        create: {
+          id,
+          githubUrl: repoUrl,
+          githubBranch: data.branch.trim(),
+          address: data.address.trim(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          environment: {
+            create: {
+              jsonText: envVarsJson,
+              createdAt: new Date(),
+              updatedAt: new Date(),
             },
           },
-        });
-      }
-      // const projectPath = await this.fileSrv.saveFilesFromGithub(id, repoUrl);
+          buildConfig: {
+            create: {
+              jsonText: '',
+              outputDir: data.outputDir.trim(),
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          },
+        },
+      });
       // call deploy service to deploy the project
       const deployId = await this.startDeployment(id, envVarsJson);
 

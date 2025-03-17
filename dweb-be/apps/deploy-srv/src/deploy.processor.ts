@@ -16,7 +16,7 @@ export class DeployProcessor extends WorkerHost {
 
     try {
       // Step 1: Get Code from File Server
-      const [projectPath, uploadId] =
+      const [projectPath, uploadId, commitHash, commitTitle, outputDir] =
         await this.deployService.fetchProject(deployId);
       this.logger.log(`[DEPLOY] Project fetched: ${projectPath}`);
       await job.updateProgress(33);
@@ -30,17 +30,24 @@ export class DeployProcessor extends WorkerHost {
       const ipfsCid = await this.deployService.uploadToIPFS(
         uploadId,
         projectPath,
+        outputDir,
       );
       this.logger.log(`[DEPLOY] Uploaded to IPFS: ${ipfsCid}`);
       await job.updateProgress(100);
 
       // Mark job as completed
-      return { deployId, status: 'deployed', ipfsCid };
+      return { deployId, status: 'deployed', ipfsCid, commitHash, commitTitle };
     } catch (error) {
       this.logger.error(
         `Failed to process project: ${deployId} - err: ${JSON.stringify(error)}`,
       );
-      return { deployId, status: 'failed', error: JSON.stringify(error) };
+      return {
+        deployId,
+        status: 'failed',
+        error: JSON.stringify(error),
+        commitHash: '',
+        commitTitle: '',
+      };
     }
   }
 
@@ -53,11 +60,21 @@ export class DeployProcessor extends WorkerHost {
       this.logger.error(`Job ${job.id} has no return value`);
       return;
     }
+    const value = job.returnvalue as {
+      deployId: number;
+      status: string;
+      ipfsCid: string;
+      error?: string;
+      commitHash: string;
+      commitTitle: string;
+    };
     await this.deployService.updateIPFSCid(
-      job.returnvalue.deployId as number,
-      job.returnvalue.ipfsCid as string,
-      job.returnvalue.status as string,
-      job.returnvalue.error?.toString() || '',
+      value.deployId,
+      value.ipfsCid,
+      value.status,
+      value.error || '',
+      value.commitHash,
+      value.commitTitle,
     );
   }
 }
