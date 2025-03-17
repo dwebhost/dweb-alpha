@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { AppService } from './app.service';
 import { UploadGithub } from './dto/upload-github';
-import { verifySignature } from '../../../ultils/helper';
+import { verifySignature } from '../../../utils/helper';
 
 @Controller('api/files')
 export class AppController {

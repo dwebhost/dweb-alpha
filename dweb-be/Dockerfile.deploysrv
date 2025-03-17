@@ -18,6 +18,7 @@ RUN pnpm prisma generate
 # Copy the source code for deploy-srv
 COPY apps/deploy-srv ./apps/deploy-srv
 COPY apps/files-srv ./apps/files-srv
+COPY utils ./utils
 COPY tsconfig.json nest-cli.json ./
 COPY .env .env
 

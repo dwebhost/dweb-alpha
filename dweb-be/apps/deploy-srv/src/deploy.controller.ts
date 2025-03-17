@@ -10,7 +10,7 @@ import { DeployService } from './deploy.service';
 import { StartDeploy } from './dto/start-deploy';
 import { UpdateEns } from './dto/update-ens';
 import { Redeploy } from './dto/redeploy';
-import { verifySignature } from '../../../ultils/helper';
+import { verifySignature } from '../../../utils/helper';
 
 @Controller('api/deploy')
 export class DeployController {
