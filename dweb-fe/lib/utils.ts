@@ -12,3 +12,12 @@ export function dnsEncode(label: string) {
   const suffix = toHex(0, { size: 1 }); // 1-byte hex encoding
   return  concat([prefix, text, suffix]);
 }
+
+export function resolverUrl(ensName: string, isTest: boolean = true) {
+  const ensWithoutEth = ensName.endsWith(".eth") ? ensName.slice(0, -4) : ensName;
+  let url = `https://${ensWithoutEth}.istest.eth.limo`
+  if (!isTest) {
+    url = `https://${ensWithoutEth}.eth.limo`
+  }
+  return url;
+}

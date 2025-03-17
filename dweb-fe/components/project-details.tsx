@@ -11,6 +11,7 @@ import {useAccount, useSignMessage} from "wagmi";
 import {Input} from "@/components/ui/input";
 import {AddEnsDialog} from "@/components/add-ens-dialog";
 import {deploySrvUrl} from "@/hooks/useDeploySrv";
+import {resolverUrl} from "@/lib/utils";
 
 type ProjectInfo = {
   githubUrl: string;
@@ -180,7 +181,7 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
           <Label className="font-semibold">Ens Domain</Label>
           <div>
             {projectInfo.ensName ? (
-              <Button variant="secondary">
+              <Button variant="secondary" onClick={() => window.open(resolverUrl(projectInfo.ensName!), "_blank")}>
                 {projectInfo.ensName} <ArrowUpRight className="w-4 h-4"/>
               </Button>
             ) : (

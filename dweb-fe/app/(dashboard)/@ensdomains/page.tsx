@@ -6,6 +6,7 @@ import {useEffect, useState} from "react";
 import {Label} from "@/components/ui/label";
 import {Button} from "@/components/ui/button";
 import {ArrowUpRight, Github, GitMerge} from "lucide-react";
+import {resolverUrl} from "@/lib/utils";
 
 type EnsData = {
   id: string;
@@ -56,10 +57,12 @@ export default function EnsDomains() {
       {ensData.length > 0 ? (
         <div className="flex flex-col w-full">
           {ensData.map((project) => (
-            <div key={project.id} className="flex flex-col p-4 border-b border-gray-200 rounded-md gap-4">
+            <div key={project.id} className="flex flex-col p-4 border-b border-gray-200 rounded-md gap-4 mb-6">
               <div className="flex flex-row justify-between items-center">
                 <Label className="font-semibold text-xl">{project.projectName}</Label>
-                <Button variant="secondary">{project.ensName} <ArrowUpRight className="w-4 h-4"/> </Button>
+                <Button variant="secondary" onClick={() => window.open(resolverUrl(project.ensName), "_blank")}>
+                  {project.ensName} <ArrowUpRight className="w-4 h-4"/>
+                </Button>
               </div>
               <div className="flex flex-row justify-between items-center">
                 <Button variant="ghost" onClick={() => window.open(project.githubUrl, "_blank")}>
