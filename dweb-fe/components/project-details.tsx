@@ -10,6 +10,7 @@ import EnvManager, {EnvVar} from "@/components/envmanager";
 import {useAccount} from "wagmi";
 import {Input} from "@/components/ui/input";
 import {AddEnsDialog} from "@/components/add-ens-dialog";
+import {deploySrvUrl} from "@/hooks/useDeploySrv";
 
 type ProjectInfo = {
   githubUrl: string;
@@ -63,7 +64,7 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
   const [deployment, setDeployment] = useState<Deployment | null>(null);
   const [envVars, setEnvVars] = useState<EnvVar[]>([{key: "", value: ""}]);
   const [rootDir, setRootDir] = useState("./");
-  const [isfetching, setIsFetching] = useState(true);
+  const [isFetching, setIsFetching] = useState(true);
 
   const {isConnected} = useAccount();
 
@@ -82,8 +83,26 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
     }
   }
 
+  const handleReDeploy = async () => {
+    try {
+      const apiUrl = `${deploySrvUrl}/deploy/start`;
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({projectId: projectId, envJson: JSON.stringify(envVars)}),
+      });
+      const data = await response.json();
+      console.log("data", data);
+      setIsFetching(true);
+    } catch (err) {
+      console.error("Error re-deploying project:", err)
+    }
+  }
+
   useEffect(() => {
-    if (isConnected && projectId && isfetching) {
+    if (isConnected && projectId && isFetching) {
       getProject(projectId).then((data) => {
         const projectInfo: ProjectInfo = {
           githubUrl: data.githubUrl,
@@ -107,7 +126,7 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
         setIsFetching(false);
       });
     }
-  }, [isConnected, projectId, isfetching]);
+  }, [isConnected, projectId, isFetching]);
 
   if (!projectInfo || !deployment) {
     return <div>Loading...</div>
@@ -118,7 +137,7 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
       <div className="flex flex-col space-y-8 md:max-w-2xl md:mx-auto">
         <div className="flex flex-row items-center justify-between mb-10">
           <Label className="font-bold text-3xl">{projectInfo.githubUrl.split("/").pop()}</Label>
-          <Button variant="secondary"><RotateCcw className="w-4 h-4"/> Re-Deploy</Button>
+          <Button variant="secondary" onClick={handleReDeploy}><RotateCcw className="w-4 h-4"/> Re-Deploy</Button>
         </div>
         <div className="flex flex-row md:space-x-20 space-x-5">
           <div className={"flex flex-col space-y-2"}>
@@ -161,6 +180,7 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
                 address={projectInfo.address}
                 projectId={projectId}
                 deployId={deployment.id}
+                disabled={!deployment.ipfsCid}
                 setFetching={setIsFetching}/>
             )}
           </div>

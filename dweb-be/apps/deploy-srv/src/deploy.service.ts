@@ -89,11 +89,16 @@ export class DeployService {
     await this.git.clone(urlRepo, projectPath);
 
     if (deployment.project && deployment.project.environment) {
-      const jsonEnv = JSON.parse(deployment.project.environment.jsonText) as {
-        key: string;
-        value: string;
-      }[];
-      this.writeEnv(projectPath, jsonEnv);
+      if (
+        deployment.project.environment.jsonText &&
+        deployment.project.environment.jsonText !== ''
+      ) {
+        const jsonEnv = JSON.parse(deployment.project.environment.jsonText) as {
+          key: string;
+          value: string;
+        }[];
+        this.writeEnv(projectPath, jsonEnv);
+      }
     }
 
     return [projectPath, `${deployment.projectId}-${deployment.id}`];

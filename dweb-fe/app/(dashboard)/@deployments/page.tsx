@@ -2,13 +2,15 @@
 
 import {fileSrvUrl} from "@/hooks/useFileSrv";
 import {useAccount} from "wagmi";
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import ProjectList, {Project} from "@/components/project";
 
 export default function Deployments() {
   const [projects, setProjects] = useState<Project[]>([]);
+  const projectsRef = useRef<Project[]>([]);
 
   const {address} = useAccount();
+
   const getAllProjects = async (address: string) => {
     try {
       const apiUrl = `${fileSrvUrl}/files/project/address/${address}`;
@@ -24,30 +26,44 @@ export default function Deployments() {
     }
   }
 
-  useEffect(() => {
-    if (address) {
-      getAllProjects(address).then((data) => {
-        if (data) {
-          const projects = data.map((d: {
-            id: string;
-            githubUrl: string;
-            githubBranch: string;
-            deployments: { commitHash: string; status: string }[]
-          }) => {
-            return {
-              id: d.id,
-              projectName: d.githubUrl.replace("https://github.com/", ""),
-              githubRepo: d.githubUrl,
-              branch: d.githubBranch,
-              status: d.deployments[0].status,
-              commitHash: d.deployments[0].commitHash
-            }
-          });
-          setProjects(projects);
+  const fetchProjects = useCallback(async () => {
+    if (!address) return;
+
+    try {
+      const data = await getAllProjects(address);
+      if (data) {
+        const newProjects = data.map((d: {
+          id: string;
+          githubUrl: string;
+          githubBranch: string;
+          deployments: { commitHash: string; status: string }[]
+        }) => ({
+          id: d.id,
+          projectName: d.githubUrl.replace("https://github.com/", ""),
+          githubRepo: d.githubUrl,
+          branch: d.githubBranch,
+          status: d.deployments[0]?.status || "unknown",
+          commitHash: d.deployments[0]?.commitHash || "N/A"
+        }));
+
+        if (JSON.stringify(projectsRef.current) !== JSON.stringify(newProjects)) {
+          setProjects(newProjects);
+          projectsRef.current = newProjects;
         }
-      });
+      }
+    } catch (error) {
+      console.error("Error fetching projects:", error);
     }
   }, [address]);
+
+  useEffect(() => {
+    fetchProjects().catch(console.error);
+  }, [fetchProjects]);
+
+  useEffect(() => {
+    const interval = setInterval(fetchProjects, 10000);
+    return () => clearInterval(interval);
+  }, [fetchProjects]);
 
   return (
     <div className="flex flex-col w-full">

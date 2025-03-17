@@ -26,7 +26,7 @@ export default function Dashboard() {
   const [isOpened, setIsOpened] = useState(false);
 
   const {address} = useAccount()
-  const {uploadGithub, isMutating: isUploading} = useFileSrv();
+  const {uploadGithub, isMutating: isUploading, data: respUpload} = useFileSrv();
 
   const clearState = () => {
     setRepoUrl("");
@@ -53,7 +53,6 @@ export default function Dashboard() {
         envJson: envVars.length > 1 ? JSON.stringify(envVars) : "",
         address: address!
       });
-      clearState();
     } catch (e) {
       console.error(e);
       toast.dismiss()
@@ -62,8 +61,10 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    if (!isUploading) {
+    if (!isUploading && respUpload) {
       setIsOpened(false);
+      clearState();
+      toast.success("Project will be deployed shortly");
     }
   }, [isUploading]);
 

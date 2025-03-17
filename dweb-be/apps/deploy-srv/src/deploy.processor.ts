@@ -36,11 +36,11 @@ export class DeployProcessor extends WorkerHost {
 
       // Mark job as completed
       return { deployId, status: 'deployed', ipfsCid };
-    } catch (error: unknown) {
+    } catch (error) {
       this.logger.error(
         `Failed to process project: ${deployId} - err: ${JSON.stringify(error)}`,
       );
-      return { deployId, status: 'failed', error };
+      return { deployId, status: 'failed', error: JSON.stringify(error) };
     }
   }
 

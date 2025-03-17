@@ -27,12 +27,20 @@ type Props = {
   address: string
   projectId: string
   deployId: number
+  disabled?: boolean
   setFetching: (b: boolean) => void
 }
 
 const convertCidToContentHash = (cid: string) => `0x${encode("ipfs", cid)}`;
 
-export function AddEnsDialog({ipfsCid, address, projectId, deployId, setFetching}: Props) {
+export function AddEnsDialog({
+                               ipfsCid,
+                               address,
+                               projectId,
+                               deployId,
+                               disabled,
+                               setFetching
+                             }: Props) {
   const [ensName, setEnsName] = useState<{ value: string; label: string; }[]>([]);
   const [selectedEnsName, setSelectedEnsName] = useState<string | null>(null);
   const [isOpened, setIsOpened] = useState(false);
@@ -150,7 +158,7 @@ export function AddEnsDialog({ipfsCid, address, projectId, deployId, setFetching
   return (
     <AlertDialog open={isOpened} onOpenChange={setIsOpened}>
       <AlertDialogTrigger asChild>
-        <Button variant="secondary"> <Plus className="w-4 h-4"/> Add Ens Domain</Button>
+        <Button variant="secondary" disabled={disabled}> <Plus className="w-4 h-4"/> Add Ens Domain</Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
