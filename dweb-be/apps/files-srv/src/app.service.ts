@@ -176,4 +176,21 @@ export class AppService {
       },
     });
   }
+
+  getEnsDomains(address: string) {
+    return this.prisma.project.findMany({
+      where: {
+        address: address,
+        ensName: {
+          not: null,
+        },
+      },
+      select: {
+        id: true,
+        ensName: true,
+        githubUrl: true,
+        githubBranch: true,
+      },
+    });
+  }
 }

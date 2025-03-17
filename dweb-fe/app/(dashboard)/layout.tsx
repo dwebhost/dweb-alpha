@@ -36,7 +36,7 @@ export default function DashboardLayout({
       <div className="flex justify-end">
         {children}
       </div>
-      <div className="flex flex-row">
+      <div className="flex flex-row gap-12">
         <div className="w-1/3">
           {ensdomains}
         </div>

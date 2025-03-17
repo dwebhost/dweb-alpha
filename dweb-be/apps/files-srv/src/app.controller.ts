@@ -16,7 +16,7 @@ export class AppController {
     return this.appService.getGithubUpload(repoUrl);
   }
 
-  @Get('upload/github/address/:address')
+  @Get('project/address/:address')
   async getAllGithubUpload(@Param('address') address: string) {
     return this.appService.getAllGithubUpload(address);
   }
@@ -24,5 +24,10 @@ export class AppController {
   @Get('project/:projectId')
   async getProject(@Param('projectId') projectId: string) {
     return this.appService.getProject(projectId);
+  }
+
+  @Get('project/ens/:address')
+  async getEnsDomains(@Param('address') address: string) {
+    return this.appService.getEnsDomains(address);
   }
 }

@@ -60,12 +60,6 @@ export default function Dashboard() {
     }
   };
 
-  useEffect(() => {
-    if (!isConnected) {
-      // router.push("/");
-    }
-  }, [isConnected])
-
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>

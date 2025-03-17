@@ -11,7 +11,7 @@ export default function Deployments() {
   const {address} = useAccount();
   const getAllProjects = async (address: string) => {
     try {
-      const apiUrl = `${fileSrvUrl}/files/upload/github/address/${address}`;
+      const apiUrl = `${fileSrvUrl}/files/project/address/${address}`;
       const response = await fetch(apiUrl, {
         method: "GET",
         headers: {
