@@ -29,6 +29,9 @@ RUN pnpm build deploy-srv
 FROM node:22-alpine AS runner
 WORKDIR /usr/src/app
 
+# Install git for repository operations
+RUN apk add --no-cache git
+
 # Copy built files
 COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/node_modules ./node_modules
