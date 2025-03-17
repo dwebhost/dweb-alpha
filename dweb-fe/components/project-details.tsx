@@ -4,7 +4,7 @@ import {fileSrvUrl} from "@/hooks/useFileSrv";
 import {useEffect, useState} from "react";
 import {Label} from "@/components/ui/label";
 import {Button} from "@/components/ui/button";
-import {CircleCheck, CircleDotDashed, Github, GitMerge, Plus} from "lucide-react";
+import {ArrowUpRight, CircleCheck, CircleDotDashed, Github, GitMerge} from "lucide-react";
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from "@/components/ui/accordion";
 import EnvManager, {EnvVar} from "@/components/envmanager";
 import {useAccount} from "wagmi";
@@ -62,6 +62,7 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
   const [deployment, setDeployment] = useState<Deployment | null>(null);
   const [envVars, setEnvVars] = useState<EnvVar[]>([{key: "", value: ""}]);
   const [rootDir, setRootDir] = useState("./");
+  const [isfetching, setIsFetching] = useState(true);
 
   const {isConnected} = useAccount();
 
@@ -81,7 +82,7 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
   }
 
   useEffect(() => {
-    if (isConnected && projectId) {
+    if (isConnected && projectId && isfetching) {
       getProject(projectId).then((data) => {
         const projectInfo: ProjectInfo = {
           githubUrl: data.githubUrl,
@@ -101,9 +102,10 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
         setProjectInfo(projectInfo);
         setDeployment(deployment);
         setEnvVars(envVars);
+        setIsFetching(false);
       });
     }
-  }, [isConnected, projectId]);
+  }, [isConnected, projectId, isfetching]);
 
   if (!projectInfo || !deployment) {
     return <div>Loading...</div>
@@ -129,7 +131,7 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
           </div>
           <div className={"flex flex-col space-y-2"}>
             <Label className="font-semibold">Deployed At</Label>
-            <p>{timeAgo(deployment.deployedAt)}</p>
+            <p>{deployment.deployedAt ? timeAgo(deployment.deployedAt) : "Pending"}</p>
           </div>
           <div className={"flex flex-col space-y-2"}>
             <Label className="font-semibold">Deployed By</Label>
@@ -146,11 +148,19 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
         </div>
         <div className="flex flex-col space-y-4">
           <Label className="font-semibold">Ens Domain</Label>
-          {projectInfo.ensName ? (
-            <p>{projectInfo.ensName}</p>
-          ) : (
-            <AddEnsDialog ipfsCid={deployment.ipfsCid} address={projectInfo.address}/>
-          )}
+          <div>
+            {projectInfo.ensName ? (
+              <Button variant="secondary">
+                {projectInfo.ensName} <ArrowUpRight className="w-4 h-4"/>
+              </Button>
+            ) : (
+              <AddEnsDialog
+                ipfsCid={deployment.ipfsCid}
+                address={projectInfo.address}
+                projectId={projectId}
+                setFetching={setIsFetching}/>
+            )}
+          </div>
         </div>
         <div className="flex flex-col space-y-4">
           <Label className="font-semibold">Source</Label>

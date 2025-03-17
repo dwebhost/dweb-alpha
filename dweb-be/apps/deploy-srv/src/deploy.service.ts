@@ -11,6 +11,7 @@ import * as fs from 'node:fs';
 import { StartDeploy } from './dto/start-deploy';
 import { simpleGit } from 'simple-git';
 import * as path from 'path';
+import { UpdateEns } from './dto/update-ens';
 
 @Injectable()
 export class DeployService {
@@ -197,5 +198,16 @@ export class DeployService {
       .join('\n');
 
     return fs.writeFileSync(envPath, envFile);
+  }
+
+  updateEns(input: UpdateEns) {
+    this.logger.log(`[DEPLOY] Updating ENS for ${input.projectId}`);
+    return this.prisma.project.update({
+      where: { id: input.projectId },
+      data: {
+        ensName: input.ensDomain,
+        updatedAt: new Date(),
+      },
+    });
   }
 }

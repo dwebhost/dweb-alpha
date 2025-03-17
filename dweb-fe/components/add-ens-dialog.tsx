@@ -20,15 +20,18 @@ import {ENS_REGISTRY_ABI, ENS_RESOLVER_ABI} from "@/lib/abi";
 import {namehash} from "viem";
 import {BaseError, useAccount, useReadContract, useWaitForTransactionReceipt, useWriteContract} from "wagmi";
 import {encode} from "@ensdomains/content-hash";
+import {deploySrvUrl} from "@/hooks/useDeploySrv";
 
 type Props = {
   ipfsCid: string | undefined
   address: string
+  projectId: string
+  setFetching: (b: boolean) => void
 }
 
 const convertCidToContentHash = (cid: string) => `0x${encode("ipfs", cid)}`;
 
-export function AddEnsDialog({ipfsCid, address}: Props) {
+export function AddEnsDialog({ipfsCid, address, projectId, setFetching}: Props) {
   const [ensName, setEnsName] = useState<{ value: string; label: string; }[]>([]);
   const [selectedEnsName, setSelectedEnsName] = useState<string | null>(null);
   const [isOpened, setIsOpened] = useState(false);
@@ -80,6 +83,22 @@ export function AddEnsDialog({ipfsCid, address}: Props) {
     }
   }
 
+  const updateEns = async (projectId: string, ensName: string) => {
+    try {
+      const apiUrl = `${deploySrvUrl}/deploy/ens/update`;
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({projectId: projectId, ensDomain: ensName}),
+      });
+      return await response.json();
+    } catch (err) {
+      console.error("Error updating ENS:", err)
+    }
+  }
+
   const handleSelection = (value: string) => {
     setSelectedEnsName(value);
   }
@@ -116,10 +135,13 @@ export function AddEnsDialog({ipfsCid, address}: Props) {
       });
     }
     if (isConfirmed) {
+      // call the api to update the ens name
+      updateEns(projectId, selectedEnsName!).catch(console.error);
       toast.dismiss();
       toast.success("ENS updated successfully", {
         description: `Transaction Hash: ${hash}`,
       });
+      setFetching(true);
       setIsOpened(false);
     }
   }, [error, isConfirmed, isConfirming]);

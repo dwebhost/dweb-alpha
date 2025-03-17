@@ -3,7 +3,7 @@
 import useSWRMutation from "swr/mutation"
 import useSWR, {mutate} from "swr";
 
-export const backendUrl = process.env.NEXT_PUBLIC_DEPLOY_SRV_URL || "http://localhost:5200/api"
+export const deploySrvUrl = process.env.NEXT_PUBLIC_DEPLOY_SRV_URL || "http://localhost:5200/api"
 
 /**
  * Type for the payload we send to the API
@@ -59,7 +59,7 @@ export function useDeploySrv() {
     data,         // holds success response data
     error,        // holds error object if the request fails
     isMutating,   // boolean for loading state
-  } = useSWRMutation(backendUrl + "/deploy/start", deployFetcher)
+  } = useSWRMutation(deploySrvUrl + "/deploy/start", deployFetcher)
 
   /**
    * Wrap trigger() in a user-friendly function.
@@ -69,7 +69,7 @@ export function useDeploySrv() {
   }
 
   function useDeployStatus(deployId: string) {
-    const {data, error, isLoading} = useSWR(deployId && deployId != "" ?`${backendUrl}/deploy/status/${deployId}`: null,
+    const {data, error, isLoading} = useSWR(deployId && deployId != "" ?`${deploySrvUrl}/deploy/status/${deployId}`: null,
       statusFetcher,
       {refreshInterval: (latestData) => {
           if (!latestData || latestData.status === "processing") {
@@ -88,8 +88,8 @@ export function useDeploySrv() {
   }
 
   async function clearDeployCache() {
-    await mutate(`${backendUrl}/deploy/status/${data?.deployId}`, null, { revalidate: false });
-    await mutate(backendUrl + "/deploy/start", null, { revalidate: false });
+    await mutate(`${deploySrvUrl}/deploy/status/${data?.deployId}`, null, { revalidate: false });
+    await mutate(deploySrvUrl + "/deploy/start", null, { revalidate: false });
   }
 
   return {
