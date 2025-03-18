@@ -21,7 +21,7 @@ import ComboboxComponent from "@/components/combobox";
 
 export default function Dashboard() {
   const [repoUrl, setRepoUrl] = useState("");
-  const [branchName, setBranchName] = useState("main");
+  const [branchName, setBranchName] = useState("");
   const [outputDir, setOutputDir] = useState("dist");
   const [envVars, setEnvVars] = useState<EnvVar[]>([{key: "", value: ""}]);
   const [isOpened, setIsOpened] = useState(false);
@@ -85,6 +85,10 @@ export default function Dashboard() {
     }
     if (!repoUrl.startsWith("https://github.com")) {
       toast.error("Please enter a valid GitHub repository URL");
+      return
+    }
+    if (!branchName || branchName === "") {
+      toast.error("Please select the branch to deploy");
       return
     }
 

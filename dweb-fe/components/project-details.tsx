@@ -69,7 +69,7 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
   const [isFetching, setIsFetching] = useState(true);
 
   const {isConnected, address} = useAccount();
-  const { signMessageAsync } = useSignMessage();
+  const {signMessageAsync} = useSignMessage();
 
   const getProject = async (projectId: string) => {
     try {
@@ -89,7 +89,7 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
   const handleReDeploy = async () => {
     try {
       const message = `Re-deploy ${projectInfo?.githubUrl} at ${Date.now()}`;
-      const signature = await signMessageAsync({ message });
+      const signature = await signMessageAsync({message});
       const apiUrl = `${deploySrvUrl}/deploy/redeploy`;
       const response = await fetch(apiUrl, {
         method: "POST",
@@ -113,6 +113,7 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
   }
 
   useEffect(() => {
+    console.log("isConnected", isConnected, "projectId", projectId, "isFetching", isFetching);
     if (isConnected && projectId && isFetching) {
       getProject(projectId).then((data) => {
         const projectInfo: ProjectInfo = {
@@ -160,12 +161,12 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
               <div className="flex items-center gap-2">
                 <CircleCheck className="w-4 h-4 text-green-500"/> <span>{deployment.status}</span>
               </div> : deployment.status === "failed" ?
-              <div className="flex items-center gap-2">
-                <CircleX className="w-4 h-4 text-red-500"/> <span>{deployment.status}</span>
-              </div> :
-              <div className="flex items-center gap-2">
-                <CircleDotDashed className="w-4 h-4 text-yellow-500"/> <span>{deployment.status}</span>
-              </div>
+                <div className="flex items-center gap-2">
+                  <CircleX className="w-4 h-4 text-red-500"/> <span>{deployment.status}</span>
+                </div> :
+                <div className="flex items-center gap-2">
+                  <CircleDotDashed className="w-4 h-4 text-yellow-500"/> <span>{deployment.status}</span>
+                </div>
             }
           </div>
           <div className={"flex flex-col space-y-2"}>
@@ -179,15 +180,25 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
         </div>
         <div className="flex flex-col space-y-4">
           <Label className="font-semibold">IPFS CID</Label>
-          <Input id="ipfs_cid" disabled={true} value={deployment.ipfsCid??"Pending"}/>
+          <Input id="ipfs_cid" disabled={true} value={deployment.ipfsCid ?? "Pending"}/>
         </div>
         <div className="flex flex-col space-y-4">
           <Label className="font-semibold">Ens Domain</Label>
           <div>
             {projectInfo.ensName ? (
-              <Button variant="secondary" onClick={() => window.open(resolverUrl(projectInfo.ensName!), "_blank")}>
-                {projectInfo.ensName} <ArrowUpRight className="w-4 h-4"/>
-              </Button>
+              <div className={"flex items-center gap-2"}>
+                <Button variant="secondary" onClick={() => window.open(resolverUrl(projectInfo.ensName!), "_blank")}>
+                  {projectInfo.ensName} <ArrowUpRight className="w-4 h-4"/>
+                </Button>
+                <AddEnsDialog
+                  ipfsCid={deployment.ipfsCid}
+                  address={projectInfo.address}
+                  projectId={projectId}
+                  deployId={deployment.id}
+                  disabled={!deployment.ipfsCid}
+                  isUpdateEns={true}
+                  setFetching={setIsFetching}/>
+              </div>
             ) : (
               <AddEnsDialog
                 ipfsCid={deployment.ipfsCid}

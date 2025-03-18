@@ -11,7 +11,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import {Button} from "@/components/ui/button"
-import {Loader2, Plus} from "lucide-react";
+import {Loader2, Plus, Replace} from "lucide-react";
 import {useEffect, useState} from "react";
 import {toast} from "sonner";
 import {Label} from "@/components/ui/label";
@@ -28,6 +28,7 @@ type Props = {
   projectId: string
   deployId: number
   disabled?: boolean
+  isUpdateEns?: boolean
   setFetching: (b: boolean) => void
 }
 
@@ -39,6 +40,7 @@ export function AddEnsDialog({
                                projectId,
                                deployId,
                                disabled,
+                               isUpdateEns,
                                setFetching
                              }: Props) {
   const [ensName, setEnsName] = useState<{ value: string; label: string; }[]>([]);
@@ -158,11 +160,15 @@ export function AddEnsDialog({
   return (
     <AlertDialog open={isOpened} onOpenChange={setIsOpened}>
       <AlertDialogTrigger asChild>
-        <Button variant="secondary" disabled={disabled}> <Plus className="w-4 h-4"/> Add Ens Domain</Button>
+        {isUpdateEns ?
+          <Button variant="ghost" disabled={disabled}> <Replace className="w-4 h-4"/> Update Ens Domain</Button> :
+          <Button variant="secondary" disabled={disabled}> <Plus className="w-4 h-4"/> Add Ens Domain</Button>
+        }
+
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Add ENS Domain</AlertDialogTitle>
+          <AlertDialogTitle>{isUpdateEns ? "Update ENS Domain" : "Add ENS Domain"}</AlertDialogTitle>
           <AlertDialogDescription>
             <div className="space-y-2 mt-6">
               <Label htmlFor="ipfs-cid">ENS Domain</Label>

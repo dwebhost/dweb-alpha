@@ -192,18 +192,22 @@ export class DeployService {
       const fileNames = allFiles.map((file) =>
         file.replace(distPath + '/', ''),
       );
-      console.log(allFiles);
-      console.log(fileNames);
+
+      const numberHtmlFiles = fileNames.filter((file) =>
+        file.endsWith('.html'),
+      ).length;
       const fileObjects: File[] = [];
       allFiles.forEach((file, idx) => {
         const fileData = readFileSync(file);
         fileObjects.push(new File([fileData], fileNames[idx]));
       });
 
-      // for (const file, idx of allFiles) {
-      //   const fileData = readFileSync(file);
-      //   fileObjects.push(new File([fileData], file));
-      // }
+      if (numberHtmlFiles == 1) {
+        // Add a _redirects file to make sure all routes are redirected to index.html
+        const redirectsContent = '/* /index.html 200';
+        const redirectsFile = new File([redirectsContent], '_redirects');
+        fileObjects.push(redirectsFile);
+      }
 
       console.log(fileObjects);
       const uploadData = await this.pinata.upload.fileArray(fileObjects, {
