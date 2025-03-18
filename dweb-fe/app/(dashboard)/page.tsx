@@ -18,6 +18,7 @@ import {toast} from "sonner";
 import {useFileSrv} from "@/hooks/useFileSrv";
 import {useAccount, useSignMessage} from "wagmi";
 import ComboboxComponent from "@/components/combobox";
+import {Skeleton} from "@/components/ui/skeleton";
 
 export default function Dashboard() {
   const [repoUrl, setRepoUrl] = useState("");
@@ -34,9 +35,11 @@ export default function Dashboard() {
 
   const clearState = () => {
     setRepoUrl("");
-    setBranchName("main");
+    setBranchName("");
     setOutputDir("dist");
     setEnvVars([{key: "", value: ""}]);
+    setBranches([]);
+    setDisabledBranch(true);
   }
 
   const getBranches = async (url: string) => {
@@ -56,13 +59,35 @@ export default function Dashboard() {
     }
   }
 
+  const getDefaultBranch = async (url: string) => {
+    try {
+      let owner = url.replace("https://github.com/", "");
+      owner = owner.replace(".git", "");
+      const apiUrl = `https://api.github.com/repos/${owner}`;
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await response.json();
+      return data.default_branch;
+    } catch (err) {
+      console.error("Error fetching default branch:", err)
+    }
+  }
+
   const handleBlur = async () => {
     if (!repoUrl) {
       return
     }
     try {
+      const defaultBranch = await getDefaultBranch(repoUrl);
+      if (defaultBranch) {
+        setBranchName(defaultBranch);
+      }
       const branches = await getBranches(repoUrl);
-      const listBranches: { value: string; label: string; }[] =[];
+      const listBranches: { value: string; label: string; }[] = [];
       if (branches) {
         branches.map((branch: { name: string }) => {
           listBranches.push({label: branch.name, value: branch.name});
@@ -140,7 +165,12 @@ export default function Dashboard() {
               </div>
               <div className="grid w-full items-center gap-2">
                 <Label className="font-bold">Branch</Label>
-                <ComboboxComponent options={branches} onSelect={setBranchName} disabled={disabledBranch}/>
+                {branches.length > 1 ? <ComboboxComponent
+                  options={branches}
+                  onSelect={setBranchName}
+                  disabled={disabledBranch}
+                  defaultValue={branchName}
+                /> : <Skeleton className="h-8 w-full"/>}
               </div>
 
               <Accordion type="single" collapsible className="w-full">
@@ -170,7 +200,7 @@ export default function Dashboard() {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel className="w-1/3"
-                             onClick={() => setEnvVars([{key: "", value: ""}])}>
+                             onClick={() => clearState()}>
             Cancel
           </AlertDialogCancel>
           <Button className="w-2/3" onClick={handleDeploy} disabled={isUploading}>

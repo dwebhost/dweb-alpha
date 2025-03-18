@@ -10,13 +10,14 @@ export type Option = {
   label: string;
 }
 
-export default function ComboboxComponent({options, onSelect, disabled = false}: {
+export default function ComboboxComponent({options, onSelect, disabled = false, defaultValue}: {
   options: Option[],
   onSelect: (value: string) => void,
   disabled?: boolean,
+  defaultValue?: string
 }) {
   const [open, setOpen] = useState(false);
-  const [selectedValue, setSelectedValue] = useState(options[0]?.value || "");
+  const [selectedValue, setSelectedValue] = useState(defaultValue || options[0]?.value || "");
 
   const handleSelect = (opt: Option) => {
     setSelectedValue(opt.value);
