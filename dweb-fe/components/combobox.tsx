@@ -16,7 +16,7 @@ export default function ComboboxComponent({options, onSelect, disabled = false}:
   disabled?: boolean,
 }) {
   const [open, setOpen] = useState(false);
-  const [selectedValue, setSelectedValue] = useState("");
+  const [selectedValue, setSelectedValue] = useState(options[0]?.value || "");
 
   const handleSelect = (opt: Option) => {
     setSelectedValue(opt.value);
@@ -28,7 +28,7 @@ export default function ComboboxComponent({options, onSelect, disabled = false}:
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="outline" className="w-full" disabled={disabled}>
-          {selectedValue ? options.find((option: Option) => option.value === selectedValue)?.label : "Select option"}
+          {options.find((option) => option.value === selectedValue)?.label}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-2">

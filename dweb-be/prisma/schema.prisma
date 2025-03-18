@@ -15,7 +15,7 @@ datasource db {
 
 model Project {
   id           String       @id @unique
-  githubUrl    String       @unique
+  githubUrl    String
   githubBranch String
   address      String
   ensName      String?
@@ -25,6 +25,7 @@ model Project {
   createdAt    DateTime
   updatedAt    DateTime
 
+  @@unique([githubUrl, githubBranch])
   @@index([githubUrl, address])
 }
 

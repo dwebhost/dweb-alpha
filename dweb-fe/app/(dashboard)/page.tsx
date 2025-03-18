@@ -17,6 +17,7 @@ import {useEffect, useState} from "react";
 import {toast} from "sonner";
 import {useFileSrv} from "@/hooks/useFileSrv";
 import {useAccount, useSignMessage} from "wagmi";
+import ComboboxComponent from "@/components/combobox";
 
 export default function Dashboard() {
   const [repoUrl, setRepoUrl] = useState("");
@@ -24,9 +25,11 @@ export default function Dashboard() {
   const [outputDir, setOutputDir] = useState("dist");
   const [envVars, setEnvVars] = useState<EnvVar[]>([{key: "", value: ""}]);
   const [isOpened, setIsOpened] = useState(false);
+  const [branches, setBranches] = useState<{ value: string; label: string; }[]>([]);
+  const [disabledBranch, setDisabledBranch] = useState(true);
 
   const {address} = useAccount()
-  const { signMessageAsync } = useSignMessage();
+  const {signMessageAsync} = useSignMessage();
   const {uploadGithub, isMutating: isUploading, data: respUpload} = useFileSrv();
 
   const clearState = () => {
@@ -34,6 +37,44 @@ export default function Dashboard() {
     setBranchName("main");
     setOutputDir("dist");
     setEnvVars([{key: "", value: ""}]);
+  }
+
+  const getBranches = async (url: string) => {
+    try {
+      let owner = url.replace("https://github.com/", "");
+      owner = owner.replace(".git", "");
+      const apiUrl = `https://api.github.com/repos/${owner}/branches`;
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      return await response.json();
+    } catch (err) {
+      console.error("Error fetching branches:", err)
+    }
+  }
+
+  const handleBlur = async () => {
+    if (!repoUrl) {
+      return
+    }
+    try {
+      const branches = await getBranches(repoUrl);
+      const listBranches: { value: string; label: string; }[] =[];
+      if (branches) {
+        branches.map((branch: { name: string }) => {
+          listBranches.push({label: branch.name, value: branch.name});
+        });
+        if (listBranches.length > 0) {
+          setBranches(listBranches);
+          setDisabledBranch(false);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching branches:", error);
+    }
   }
 
   // Handle deploy
@@ -49,7 +90,7 @@ export default function Dashboard() {
 
     try {
       const message = `Deploy ${repoUrl} on branch ${branchName} at ${Date.now()}`;
-      const signature = await signMessageAsync({ message });
+      const signature = await signMessageAsync({message});
       await uploadGithub({
         url: repoUrl,
         branch: branchName,
@@ -89,14 +130,13 @@ export default function Dashboard() {
                 <Input id="repo"
                        placeholder="https://github.com/username/repo"
                        value={repoUrl}
-                       onChange={(e) => setRepoUrl(e.target.value)}/>
+                       onChange={(e) => setRepoUrl(e.target.value)}
+                       onBlur={handleBlur}
+                       onPaste={handleBlur}/>
               </div>
               <div className="grid w-full items-center gap-2">
                 <Label className="font-bold">Branch</Label>
-                <Input id="branch"
-                       placeholder="main"
-                       value={branchName}
-                       onChange={(e) => setBranchName(e.target.value)}/>
+                <ComboboxComponent options={branches} onSelect={setBranchName} disabled={disabledBranch}/>
               </div>
 
               <Accordion type="single" collapsible className="w-full">
@@ -130,7 +170,7 @@ export default function Dashboard() {
             Cancel
           </AlertDialogCancel>
           <Button className="w-2/3" onClick={handleDeploy} disabled={isUploading}>
-            {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> :"Deploy"}
+            {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : "Deploy"}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

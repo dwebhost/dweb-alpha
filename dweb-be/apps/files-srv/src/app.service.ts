@@ -17,7 +17,6 @@ export class AppService {
   ) {}
 
   async uploadGithub(data: UploadGithub) {
-    console.log('Data:', JSON.stringify(data));
     const repoUrl = data.url.trim();
     const envVarsJson = data.envJson;
     const isPublicRepo = await this.isRepoPublic(repoUrl);
@@ -29,6 +28,7 @@ export class AppService {
       const projectInfo = await this.prisma.project.findFirst({
         where: {
           githubUrl: repoUrl,
+          githubBranch: data.branch.trim(),
         },
       });
 
@@ -36,7 +36,10 @@ export class AppService {
       // save project info to db
       await this.prisma.project.upsert({
         where: {
-          githubUrl: repoUrl,
+          githubUrl_githubBranch: {
+            githubUrl: repoUrl,
+            githubBranch: data.branch.trim(),
+          },
         },
         update: {
           updatedAt: new Date(),
