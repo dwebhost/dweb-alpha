@@ -29,7 +29,6 @@ type Props = {
   deployId: number
   disabled?: boolean
   isUpdateEns?: boolean
-  setFetching: (b: boolean) => void
 }
 
 const convertCidToContentHash = (cid: string) => `0x${encode("ipfs", cid)}`;
@@ -41,7 +40,6 @@ export function AddEnsDialog({
                                deployId,
                                disabled,
                                isUpdateEns,
-                               setFetching
                              }: Props) {
   const [ensName, setEnsName] = useState<{ value: string; label: string; }[]>([]);
   const [selectedEnsName, setSelectedEnsName] = useState<string | null>(null);
@@ -152,7 +150,6 @@ export function AddEnsDialog({
       toast.success("ENS updated successfully", {
         description: `Transaction Hash: ${hash}`,
       });
-      setFetching(true);
       setIsOpened(false);
     }
   }, [error, isConfirmed, isConfirming]);

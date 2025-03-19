@@ -66,7 +66,6 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
   const [deployment, setDeployment] = useState<Deployment | null>(null);
   const [envVars, setEnvVars] = useState<EnvVar[]>([{key: "", value: ""}]);
   const [outputDir, setOutputDir] = useState("dist");
-  const [isFetching, setIsFetching] = useState(true);
 
   const {isConnected, address} = useAccount();
   const {signMessageAsync} = useSignMessage();
@@ -85,6 +84,36 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
       console.error("Error fetching project:", err)
     }
   }
+
+  const fetchProjectData = async () => {
+    if (isConnected && projectId) {
+      const data = await getProject(projectId);
+      if (data) {
+        const projectInfo: ProjectInfo = {
+          githubUrl: data.githubUrl,
+          githubBranch: data.githubBranch,
+          address: data.address,
+          ensName: data.ensName,
+          envJson: data.environment?.jsonText,
+        };
+        const deployment: Deployment = {
+          id: data.deployments[0].id,
+          commitHash: data.deployments[0].commitHash,
+          commitTitle: data.deployments[0].commitTitle,
+          ipfsCid: data.deployments[0].ipfsCid,
+          status: data.deployments[0].status,
+          deployedAt: data.deployments[0].createdAt,
+        };
+        const outputDir = data.buildConfig?.outputDir ?? "dist";
+        const envVars: EnvVar[] = projectInfo.envJson ? JSON.parse(projectInfo.envJson) : [{ key: "", value: "" }];
+
+        setProjectInfo(projectInfo);
+        setDeployment(deployment);
+        setEnvVars(envVars);
+        setOutputDir(outputDir);
+      }
+    }
+  };
 
   const handleReDeploy = async () => {
     try {
@@ -106,42 +135,25 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
       });
       const data = await response.json();
       console.log("data", data);
-      setIsFetching(true);
+      fetchProjectData().catch(console.error);
     } catch (err) {
       console.error("Error re-deploying project:", err)
     }
   }
 
   useEffect(() => {
-    console.log("isConnected", isConnected, "projectId", projectId, "isFetching", isFetching);
-    if (isConnected && projectId && isFetching) {
-      getProject(projectId).then((data) => {
-        const projectInfo: ProjectInfo = {
-          githubUrl: data.githubUrl,
-          githubBranch: data.githubBranch,
-          address: data.address,
-          ensName: data.ensName,
-          envJson: data.environment?.jsonText,
-        };
-        const deployment: Deployment = {
-          id: data.deployments[0].id,
-          commitHash: data.deployments[0].commitHash,
-          commitTitle: data.deployments[0].commitTitle,
-          ipfsCid: data.deployments[0].ipfsCid,
-          status: data.deployments[0].status,
-          deployedAt: data.deployments[0].createdAt,
-        }
-        const outputDir = data.buildConfig?.outputDir ?? "dist";
-        const envVars: EnvVar[] = projectInfo.envJson ? JSON.parse(projectInfo.envJson) : [{key: "", value: ""}];
+    // Fetch data initially
+    fetchProjectData().catch(console.error);
 
-        setProjectInfo(projectInfo);
-        setDeployment(deployment);
-        setEnvVars(envVars);
-        setOutputDir(outputDir);
-        setIsFetching(false);
-      });
-    }
-  }, [isConnected, projectId, isFetching]);
+    // Polling interval (e.g., every 10 seconds)
+    const interval = setInterval(() => {
+      fetchProjectData().catch(console.error);
+    }, 10000); // 10 seconds interval
+
+    // Cleanup interval on unmount
+    return () => clearInterval(interval);
+
+  }, [isConnected, projectId]);
 
   if (!projectInfo || !deployment) {
     return <div>Loading...</div>
@@ -196,8 +208,7 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
                   projectId={projectId}
                   deployId={deployment.id}
                   disabled={!deployment.ipfsCid}
-                  isUpdateEns={true}
-                  setFetching={setIsFetching}/>
+                  isUpdateEns={true}/>
               </div>
             ) : (
               <AddEnsDialog
@@ -205,8 +216,7 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
                 address={projectInfo.address}
                 projectId={projectId}
                 deployId={deployment.id}
-                disabled={!deployment.ipfsCid}
-                setFetching={setIsFetching}/>
+                disabled={!deployment.ipfsCid}/>
             )}
           </div>
         </div>

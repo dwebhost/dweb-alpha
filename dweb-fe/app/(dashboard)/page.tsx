@@ -19,6 +19,7 @@ import {useFileSrv} from "@/hooks/useFileSrv";
 import {useAccount, useSignMessage} from "wagmi";
 import ComboboxComponent from "@/components/combobox";
 import {Skeleton} from "@/components/ui/skeleton";
+import {useRouter} from "next/navigation";
 
 export default function Dashboard() {
   const [repoUrl, setRepoUrl] = useState("");
@@ -29,6 +30,7 @@ export default function Dashboard() {
   const [branches, setBranches] = useState<{ value: string; label: string; }[]>([]);
   const [disabledBranch, setDisabledBranch] = useState(true);
 
+  const router = useRouter();
   const {address} = useAccount()
   const {signMessageAsync} = useSignMessage();
   const {uploadGithub, isMutating: isUploading, data: respUpload} = useFileSrv();
@@ -141,6 +143,8 @@ export default function Dashboard() {
       setIsOpened(false);
       clearState();
       toast.success("Project will be deployed shortly");
+      console.log("Deployment response:", respUpload);
+      router.push(`/${respUpload.projectId}`);
     }
   }, [isUploading]);
 

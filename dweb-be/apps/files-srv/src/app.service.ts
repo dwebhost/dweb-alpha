@@ -78,7 +78,7 @@ export class AppService {
       // call deploy service to deploy the project
       const deployId = await this.startDeployment(id, envVarsJson);
 
-      return { deployId };
+      return { deployId, projectId: id };
     } catch (error) {
       this.logger.error(`Error uploading to Github: ${error}`);
       throw error;
