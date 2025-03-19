@@ -173,7 +173,7 @@ export default function Dashboard() {
               {/* ✅ Branch Selection */}
               <div className="grid w-full items-center gap-2">
                 <Label className="font-bold">Branch</Label>
-                {branches.length > 1 ? (
+                {branches.length > 0 ? (
                   <ComboboxComponent
                     options={branches}
                     onSelect={setBranchName}
