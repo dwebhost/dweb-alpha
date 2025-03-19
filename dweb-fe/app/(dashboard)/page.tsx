@@ -147,67 +147,87 @@ export default function Dashboard() {
   return (
     <AlertDialog open={isOpened} onOpenChange={setIsOpened}>
       <AlertDialogTrigger asChild>
-        <Button variant="secondary"> <Plus className="w-4 h-4"/> New Project</Button>
+        <Button variant="secondary">
+          <Plus className="w-4 h-4" /> New Project
+        </Button>
       </AlertDialogTrigger>
-      <AlertDialogContent>
+      <AlertDialogContent className="w-[95vw] max-w-md md:max-w-lg lg:max-w-xl">
         <AlertDialogHeader>
-          <AlertDialogTitle className="mb-8">New Project</AlertDialogTitle>
+          <AlertDialogTitle className="mb-4 text-lg md:text-xl">New Project</AlertDialogTitle>
           <AlertDialogDescription>
             <div className="flex flex-col space-y-4">
+              {/* ✅ GitHub Repo Input */}
               <div className="grid w-full items-center gap-2">
-                <Label className="font-bold">Github Repo</Label>
-                <Input id="repo"
-                       placeholder="https://github.com/username/repo"
-                       value={repoUrl}
-                       onChange={(e) => setRepoUrl(e.target.value)}
-                       onBlur={handleBlur}
-                       onPaste={handleBlur}/>
-              </div>
-              <div className="grid w-full items-center gap-2">
-                <Label className="font-bold">Branch</Label>
-                {branches.length > 1 ? <ComboboxComponent
-                  options={branches}
-                  onSelect={setBranchName}
-                  disabled={disabledBranch}
-                  defaultValue={branchName}
-                /> : <Skeleton className="h-8 w-full"/>}
+                <Label className="font-bold">GitHub Repo</Label>
+                <Input
+                  id="repo"
+                  placeholder="https://github.com/username/repo"
+                  value={repoUrl}
+                  onChange={(e) => setRepoUrl(e.target.value)}
+                  onBlur={handleBlur}
+                  onPaste={handleBlur}
+                  className="w-full"
+                />
               </div>
 
+              {/* ✅ Branch Selection */}
+              <div className="grid w-full items-center gap-2">
+                <Label className="font-bold">Branch</Label>
+                {branches.length > 1 ? (
+                  <ComboboxComponent
+                    options={branches}
+                    onSelect={setBranchName}
+                    disabled={disabledBranch}
+                    defaultValue={branchName}
+                  />
+                ) : (
+                  <Skeleton className="h-8 w-full" />
+                )}
+              </div>
+
+              {/* ✅ Accordion for Build Settings & Env Variables */}
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="build-settings">
-                  <AccordionTrigger className="font-bold">Build Settings</AccordionTrigger>
+                  <AccordionTrigger className="font-bold text-base">Build Settings</AccordionTrigger>
                   <AccordionContent>
                     <div className="flex flex-col space-y-4">
                       <div className="grid w-full items-center gap-2">
                         <Label className="font-bold">Output Directory</Label>
-                        <Input id="repo"
-                               placeholder="dist"
-                               value={outputDir}
-                               onChange={(e) => setOutputDir(e.target.value)}/>
+                        <Input
+                          id="output-dir"
+                          placeholder="dist"
+                          value={outputDir}
+                          onChange={(e) => setOutputDir(e.target.value)}
+                          className="w-full"
+                        />
                       </div>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
-                <AccordionItem value="envrionment-variables">
-                  <AccordionTrigger className="font-bold">Environment Variables</AccordionTrigger>
+                <AccordionItem value="environment-variables">
+                  <AccordionTrigger className="font-bold text-base">Environment Variables</AccordionTrigger>
                   <AccordionContent>
-                    <EnvManager envVars={envVars} setEnvVars={setEnvVars}/>
+                    <EnvManager envVars={envVars} setEnvVars={setEnvVars} />
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel className="w-1/3"
-                             onClick={() => clearState()}>
+
+        {/* ✅ Responsive Footer */}
+        <AlertDialogFooter className="flex flex-col space-y-3 md:space-y-0 md:flex-row">
+          <AlertDialogCancel
+            className="w-full md:w-1/3"
+            onClick={() => clearState()}
+          >
             Cancel
           </AlertDialogCancel>
-          <Button className="w-2/3" onClick={handleDeploy} disabled={isUploading}>
-            {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : "Deploy"}
+          <Button className="w-full md:w-2/3" onClick={handleDeploy} disabled={isUploading}>
+            {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Deploy"}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  )
+  );
 }
