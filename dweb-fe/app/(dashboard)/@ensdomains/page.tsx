@@ -60,7 +60,7 @@ export default function EnsDomains() {
             <div key={project.id} className="flex flex-col p-4 border-b border-gray-200 rounded-md gap-4 mb-6">
               <div className="flex flex-row justify-between items-center">
                 <Label className="font-semibold text-xl">{project.projectName}</Label>
-                <Button variant="secondary" onClick={() => window.open(resolverUrl(project.ensName), "_blank")}>
+                <Button variant="secondary" onClick={() => window.open(resolverUrl(project.ensName, false), "_blank")}>
                   {project.ensName} <ArrowUpRight className="w-4 h-4"/>
                 </Button>
               </div>

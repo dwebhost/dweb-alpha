@@ -199,7 +199,7 @@ export default function ProjectDetails({projectId}: { projectId: string }) {
           <div>
             {projectInfo.ensName ? (
               <div className={"flex items-center gap-2"}>
-                <Button variant="secondary" onClick={() => window.open(resolverUrl(projectInfo.ensName!), "_blank")}>
+                <Button variant="secondary" onClick={() => window.open(resolverUrl(projectInfo.ensName!, false), "_blank")}>
                   {projectInfo.ensName} <ArrowUpRight className="w-4 h-4"/>
                 </Button>
                 <AddEnsDialog
