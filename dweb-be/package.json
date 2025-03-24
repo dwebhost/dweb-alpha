@@ -22,6 +22,7 @@
     "test:e2e": "jest --config apps/files-srv/test/jest-e2e.json"
   },
   "dependencies": {
+    "@ensdomains/content-hash": "^3.0.0",
     "@nestjs/bullmq": "^11.0.2",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.0",
@@ -33,6 +34,7 @@
     "axios": "^1.7.9",
     "bullmq": "^5.41.3",
     "class-validator": "^0.14.1",
+    "content-hash": "^2.5.2",
     "fs-extra": "^11.3.0",
     "ioredis": "^5.5.0",
     "multer": "1.4.5-lts.1",

@@ -4,6 +4,9 @@ import { Chain, createPublicClient, http, PublicClient } from 'viem';
 import { base, mainnet, optimism, sepolia } from 'viem/chains';
 import { PrismaService } from '../../files-srv/src/prisma.service';
 import { CONTRACT_ABI } from './abi/abi';
+import axios from 'axios';
+import * as contentHash from 'content-hash';
+import { type ContentHash } from '@prisma/client';
 
 @Injectable()
 export class PinningSrvService {
@@ -14,6 +17,8 @@ export class PinningSrvService {
   private CONTRACTS =
     process.env.CONTRACTS ||
     '0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63,0xDaaF96c344f63131acadD0Ea35170E7892d3dfBA';
+  private IPFS_API = process.env.IPFS_API || 'http://localhost:5001/api/v0';
+  private isPinning = false;
 
   constructor(private prisma: PrismaService) {
     let chain: Chain;
@@ -38,9 +43,15 @@ export class PinningSrvService {
   }
 
   @Interval(20000)
-  async handleCron() {
-    this.logger.debug('Called when the current second is seconds 4');
+  async handleIndex() {
+    this.logger.debug('Called when the current second is 20s');
     await this.index(10n);
+  }
+
+  @Interval(10000)
+  async handlePin() {
+    this.logger.debug('Called when the current second is 20s');
+    await this.pin();
   }
 
   async getLastHead() {
@@ -149,5 +160,74 @@ export class PinningSrvService {
       fromBlock,
       toBlock,
     };
+  }
+
+  async pin() {
+    if (this.isPinning) {
+      return;
+    }
+    this.isPinning = true;
+    try {
+      const processed = await this.processBatch(10);
+      this.logger.log(`Processed ${processed} rows`);
+    } catch (e) {
+      this.logger.error('Failed to process batch:', e);
+    }
+    this.isPinning = false;
+  }
+
+  async processBatch(limit = 10) {
+    // Start transaction
+    return await this.prisma.$transaction(async (tx) => {
+      // Raw query to lock rows for this instance
+      const claimed = await tx.contentHash.updateMany({
+        where: {
+          status: 'created',
+        },
+        data: {
+          status: 'pinning',
+          updatedAt: new Date(),
+        },
+        limit,
+      });
+
+      // Re-fetch just the claimed ones
+      const rows: ContentHash[] = await tx.contentHash.findMany({
+        where: {
+          status: 'pinning',
+        },
+        orderBy: { updatedAt: 'desc' },
+        take: claimed.count,
+      });
+
+      for (const row of rows) {
+        try {
+          const cid = this.extractCID(row.hash);
+          console.log('cid', cid);
+          await axios.post(`${this.IPFS_API}/pin/add?arg=${cid}`);
+
+          await tx.contentHash.update({
+            where: { id: row.id },
+            data: { status: 'pinned', updatedAt: new Date() },
+          });
+
+          this.logger.log(`✅ Pinned ${cid}`);
+        } catch (err) {
+          this.logger.error(`❌ Failed to pin ID ${row.id}:`, err);
+
+          await tx.contentHash.update({
+            where: { id: row.id },
+            data: { status: 'failed', updatedAt: new Date() },
+          });
+        }
+      }
+
+      return rows.length;
+    });
+  }
+
+  extractCID(encoded: string): string {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-return
+    return contentHash.decode(encoded);
   }
 }
