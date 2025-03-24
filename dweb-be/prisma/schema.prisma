@@ -67,3 +67,25 @@ model BuildConfig {
 
   @@index([id])
 }
+
+model SyncInfo {
+  chain     String   @id @unique
+  blockNum  BigInt
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+
+  @@index([chain])
+}
+
+model ContentHash {
+  id        Int      @id @default(autoincrement())
+  txHash    String   @unique
+  node      String
+  hash      String
+  blockNum  BigInt
+  status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+
+  @@index([id, node, status])
+}

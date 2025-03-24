@@ -19,6 +19,15 @@
         "tsConfigPath": "apps/deploy-srv/tsconfig.app.json"
       }
     },
+    "pinning-srv": {
+      "type": "application",
+      "root": "apps/pinning-srv",
+      "entryFile": "main",
+      "sourceRoot": "apps/pinning-srv/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/pinning-srv/tsconfig.app.json"
+      }
+    },
     "upload-srv": {
       "type": "application",
       "root": "apps/files-srv",
