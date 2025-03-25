@@ -8,8 +8,8 @@ export default function Stats() {
   const { data, error, isLoading } = useStats();
 
   const items = [
-    { label: 'ENS Records', value: data?.numENS },
-    { label: 'ContentHashes', value: data?.numContentHash },
+    { label: 'Total ENS', value: data?.numENS },
+    { label: 'Total Website', value: data?.numContentHash },
     { label: 'Pinned Files', value: data?.numPinned },
     { label: 'Storage Used', value: data?.storageUsed },
   ];
