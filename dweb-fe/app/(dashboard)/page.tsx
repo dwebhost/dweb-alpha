@@ -20,6 +20,7 @@ import {useAccount, useSignMessage} from "wagmi";
 import ComboboxComponent from "@/components/combobox";
 import {Skeleton} from "@/components/ui/skeleton";
 import {useRouter} from "next/navigation";
+import Stats from "@/components/stats";
 
 export default function Dashboard() {
   const [repoUrl, setRepoUrl] = useState("");
@@ -149,89 +150,99 @@ export default function Dashboard() {
   }, [isUploading]);
 
   return (
-    <AlertDialog open={isOpened} onOpenChange={setIsOpened}>
-      <AlertDialogTrigger asChild>
-        <Button variant="secondary">
-          <Plus className="w-4 h-4" /> New Project
-        </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent className="w-[95vw] max-w-md md:max-w-lg lg:max-w-xl">
-        <AlertDialogHeader>
-          <AlertDialogTitle className="mb-4 text-lg md:text-xl">New Project</AlertDialogTitle>
-          <AlertDialogDescription>
-            <div className="flex flex-col space-y-4">
-              {/* ✅ GitHub Repo Input */}
-              <div className="grid w-full items-center gap-2">
-                <Label className="font-bold">GitHub Repo</Label>
-                <Input
-                  id="repo"
-                  placeholder="https://github.com/username/repo"
-                  value={repoUrl}
-                  onChange={(e) => setRepoUrl(e.target.value)}
-                  onBlur={handleBlur}
-                  onPaste={handleBlur}
-                  className="w-full"
-                />
-              </div>
+    <div className="w-full flex flex-col gap-6 mb-6">
+      {/* 📦 IPFS Dashboard */}
+      <div className="flex-1 w-full">
+        <Stats/>
+      </div>
 
-              {/* ✅ Branch Selection */}
-              <div className="grid w-full items-center gap-2">
-                <Label className="font-bold">Branch</Label>
-                {branches.length > 0 ? (
-                  <ComboboxComponent
-                    options={branches}
-                    onSelect={setBranchName}
-                    disabled={disabledBranch}
-                    defaultValue={branchName}
-                  />
-                ) : (
-                  <Skeleton className="h-8 w-full" />
-                )}
-              </div>
+      {/* 🚀 Deploy New Project */}
+      <div className="flex justify-end w-full">
+        <AlertDialog open={isOpened} onOpenChange={setIsOpened}>
+          <AlertDialogTrigger asChild>
+            <Button variant="secondary" className="whitespace-nowrap">
+              <Plus className="w-4 h-4"/> New Project
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent className="w-[95vw] max-w-md md:max-w-lg lg:max-w-xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="mb-4 text-lg md:text-xl">New Project</AlertDialogTitle>
+              <AlertDialogDescription>
+                <div className="flex flex-col space-y-4">
+                  {/* ✅ GitHub Repo Input */}
+                  <div className="grid w-full items-center gap-2">
+                    <Label className="font-bold">GitHub Repo</Label>
+                    <Input
+                      id="repo"
+                      placeholder="https://github.com/username/repo"
+                      value={repoUrl}
+                      onChange={(e) => setRepoUrl(e.target.value)}
+                      onBlur={handleBlur}
+                      onPaste={handleBlur}
+                      className="w-full"
+                    />
+                  </div>
 
-              {/* ✅ Accordion for Build Settings & Env Variables */}
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="build-settings">
-                  <AccordionTrigger className="font-bold text-base">Build Settings</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="flex flex-col space-y-4">
-                      <div className="grid w-full items-center gap-2">
-                        <Label className="font-bold">Output Directory</Label>
-                        <Input
-                          id="output-dir"
-                          placeholder="dist"
-                          value={outputDir}
-                          onChange={(e) => setOutputDir(e.target.value)}
-                          className="w-full"
-                        />
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="environment-variables">
-                  <AccordionTrigger className="font-bold text-base">Environment Variables</AccordionTrigger>
-                  <AccordionContent>
-                    <EnvManager envVars={envVars} setEnvVars={setEnvVars} />
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </div>
-          </AlertDialogDescription>
-        </AlertDialogHeader>
+                  {/* ✅ Branch Selection */}
+                  <div className="grid w-full items-center gap-2">
+                    <Label className="font-bold">Branch</Label>
+                    {branches.length > 0 ? (
+                      <ComboboxComponent
+                        options={branches}
+                        onSelect={setBranchName}
+                        disabled={disabledBranch}
+                        defaultValue={branchName}
+                      />
+                    ) : (
+                      <Skeleton className="h-8 w-full"/>
+                    )}
+                  </div>
 
-        {/* ✅ Responsive Footer */}
-        <AlertDialogFooter className="flex flex-col space-y-3 md:space-y-0 md:flex-row">
-          <AlertDialogCancel
-            className="w-full md:w-1/3"
-            onClick={() => clearState()}
-          >
-            Cancel
-          </AlertDialogCancel>
-          <Button className="w-full md:w-2/3" onClick={handleDeploy} disabled={isUploading}>
-            {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Deploy"}
-          </Button>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+                  {/* ✅ Accordion for Build Settings & Env Variables */}
+                  <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="build-settings">
+                      <AccordionTrigger className="font-bold text-base">Build Settings</AccordionTrigger>
+                      <AccordionContent>
+                        <div className="flex flex-col space-y-4">
+                          <div className="grid w-full items-center gap-2">
+                            <Label className="font-bold">Output Directory</Label>
+                            <Input
+                              id="output-dir"
+                              placeholder="dist"
+                              value={outputDir}
+                              onChange={(e) => setOutputDir(e.target.value)}
+                              className="w-full"
+                            />
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                    <AccordionItem value="environment-variables">
+                      <AccordionTrigger className="font-bold text-base">Environment Variables</AccordionTrigger>
+                      <AccordionContent>
+                        <EnvManager envVars={envVars} setEnvVars={setEnvVars}/>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            {/* ✅ Responsive Footer */}
+            <AlertDialogFooter className="flex flex-col space-y-3 md:space-y-0 md:flex-row">
+              <AlertDialogCancel
+                className="w-full md:w-1/3"
+                onClick={() => clearState()}
+              >
+                Cancel
+              </AlertDialogCancel>
+              <Button className="w-full md:w-2/3" onClick={handleDeploy} disabled={isUploading}>
+                {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : "Deploy"}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </div>
   );
 }

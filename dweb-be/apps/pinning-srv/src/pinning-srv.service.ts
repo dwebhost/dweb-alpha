@@ -44,13 +44,13 @@ export class PinningSrvService {
 
   @Interval(20000)
   async handleIndex() {
-    this.logger.debug('Called when the current second is 20s');
+    this.logger.debug('Called handleIndex');
     await this.index(10n);
   }
 
   @Interval(10000)
   async handlePin() {
-    this.logger.debug('Called when the current second is 20s');
+    this.logger.debug('Called handlePin');
     await this.pin();
   }
 
@@ -97,7 +97,6 @@ export class PinningSrvService {
       ),
     );
 
-    console.log('logs', logs);
     if (!logs || logs.length === 0) {
       return;
     }
@@ -164,6 +163,7 @@ export class PinningSrvService {
 
   async pin() {
     if (this.isPinning) {
+      this.logger.debug('Already pinning');
       return;
     }
     this.isPinning = true;

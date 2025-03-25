@@ -3,10 +3,14 @@
 import { Button } from "@/components/ui/button";
 import { Globe, UploadCloud, ShieldCheck } from "lucide-react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import Stats from "@/components/stats";
 
 export default function LandingPage() {
   return (
     <div className="flex flex-col items-center justify-center px-6 text-white">
+      <section className="w-full max-w-6xl mb-10">
+        <Stats/>
+      </section>
       {/* 🌐 Hero Section */}
       <div className="text-center max-w-3xl mb-12">
         <h1
