@@ -27,7 +27,7 @@ export class DeployProcessor extends WorkerHost {
       await job.updateProgress(66);
 
       // Step 3: Upload to IPFS
-      const ipfsCid = await this.deployService.uploadToIPFS(
+      const ipfsCid = await this.deployService.uploadToLocalIPFS(
         uploadId,
         projectPath,
         outputDir,

@@ -12,6 +12,7 @@ import { StartDeploy } from './dto/start-deploy';
 import { simpleGit } from 'simple-git';
 import * as path from 'path';
 import { UpdateEns } from './dto/update-ens';
+import { create } from 'ipfs-http-client';
 
 @Injectable()
 export class DeployService {
@@ -23,6 +24,8 @@ export class DeployService {
   });
   private githubBaseDir = path.join(__dirname, '../../storage/github');
   private git = simpleGit();
+  private IPFS_API = process.env.IPFS_API || 'http://localhost:5001/api/v0';
+  private ipfs: ReturnType<typeof create>;
 
   constructor(
     @InjectQueue('deploy-queue') private deployQueue: Queue,
@@ -31,6 +34,8 @@ export class DeployService {
     if (!existsSync(this.buildPath)) {
       mkdirSync(this.buildPath, { recursive: true });
     }
+
+    this.ipfs = create({ url: this.IPFS_API });
   }
 
   async startDeploy(input: StartDeploy) {
@@ -219,6 +224,69 @@ export class DeployService {
       return parts.length > 1 ? parts[1] : '';
     } catch (error) {
       this.logger.error(`Failed to upload to IPFS: ${error}`);
+      throw error;
+    }
+  }
+
+  async uploadToLocalIPFS(
+    uploadId: string,
+    buildPath: string,
+    outputDir: string,
+  ): Promise<string> {
+    console.log(`[DEPLOY] Uploading to local IPFS: ${buildPath}`);
+
+    try {
+      const distPath = `${buildPath}/${outputDir}`;
+
+      // gather all files
+      const allFiles = getAllFiles(distPath);
+      const fileNames = allFiles.map((file) =>
+        file.replace(distPath + '/', ''),
+      );
+
+      // check number of .html files
+      const numberHtmlFiles = fileNames.filter((file) =>
+        file.endsWith('.html'),
+      ).length;
+
+      // Convert each local file into a "File" object or a node stream
+      // For ipfs.addAll we can pass an object { path, content }
+      const fileObjs: Array<{ path: string; content: Buffer }> = [];
+
+      allFiles.forEach((localFilePath, idx) => {
+        const fileData = readFileSync(localFilePath);
+        fileObjs.push({
+          path: fileNames[idx],
+          content: fileData,
+        });
+      });
+
+      // If exactly 1 HTML file => add _redirects
+      if (numberHtmlFiles === 1) {
+        const redirectsContent = '/* /index.html 200';
+        fileObjs.push({
+          path: '_redirects',
+          content: Buffer.from(redirectsContent, 'utf-8'),
+        });
+      }
+
+      console.log('Files to IPFS:', fileObjs);
+
+      const results: string[] = [];
+      for await (const fileResult of this.ipfs.addAll(fileObjs, {
+        wrapWithDirectory: true,
+      })) {
+        // track each file result
+        results.push(fileResult.cid.toString());
+      }
+
+      // The last item in results is typically the "folder" root CID
+      const rootCid = results[results.length - 1];
+      this.logger.debug(`Upload ID: ${uploadId} => Root CID: ${rootCid}`);
+
+      return rootCid;
+    } catch (error) {
+      console.error(`Failed to upload to local IPFS: ${error}`);
       throw error;
     }
   }
