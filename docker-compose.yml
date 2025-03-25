@@ -6,6 +6,12 @@ services:
     networks:
       - dweb-network
 
+  ipfs:
+    image: ipfs/go-ipfs
+    restart: always
+    networks:
+      - dweb-network
+
   file-server:
     build:
       context: ./dweb-be
@@ -41,6 +47,23 @@ services:
     networks:
       - dweb-network
 
+  pinning-service:
+    build:
+      context: ./dweb-be
+      dockerfile: Dockerfile.pinsrv
+    ports:
+      - "${PINNING_SERVICE_PORT:-5300}:5300"
+    volumes:
+      - sqlite-db:/usr/src/app/database
+    env_file:
+      - dweb-be/.env
+    depends_on:
+      redis:
+        condition: service_started
+    restart: always
+    networks:
+      - dweb-network
+
   frontend:
     build:
       context: ./dweb-fe
@@ -51,6 +74,8 @@ services:
       deploy-service:
         condition: service_started
       file-server:
+        condition: service_started
+      pinning-service:
         condition: service_started
     restart: always
     networks:
