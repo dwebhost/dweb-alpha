@@ -1,4 +1,12 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
+import { PinningSrvService } from './pinning-srv.service';
 
-@Controller()
-export class PinningSrvController {}
+@Controller('/pinning')
+export class PinningSrvController {
+  constructor(private readonly pinningSrvService: PinningSrvService) {}
+
+  @Get('/statistics')
+  async getStatistics() {
+    return this.pinningSrvService.getStatistics();
+  }
+}

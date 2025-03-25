@@ -230,4 +230,66 @@ export class PinningSrvService {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-return
     return contentHash.decode(encoded);
   }
+
+  async getStatistics() {
+    try {
+      const countEnsRaw = await this.prisma.$queryRawUnsafe<
+        { count: number }[]
+      >(
+        `SELECT COUNT(DISTINCT node) as count FROM "ContentHash" WHERE node IS NOT NULL AND node != ''`,
+      );
+
+      const countEns =
+        countEnsRaw.length > 0 ? Number(countEnsRaw[0].count) : 0;
+
+      const countContentRaw = await this.prisma.$queryRawUnsafe<
+        { count: number }[]
+      >(
+        `SELECT COUNT(DISTINCT hash) as count FROM "ContentHash" WHERE hash IS NOT NULL AND hash != ''`,
+      );
+
+      const countContent =
+        countContentRaw.length > 0 ? Number(countContentRaw[0].count) : 0;
+
+      const numPinnedRaw = await this.prisma.$queryRawUnsafe<
+        { count: number }[]
+      >(
+        `SELECT COUNT(DISTINCT hash) as count FROM "ContentHash" WHERE status = 'pinned'`,
+      );
+
+      const numPinned =
+        numPinnedRaw.length > 0 ? Number(numPinnedRaw[0].count) : 0;
+      const statsIPFS = await this.getStorageStats();
+
+      return {
+        numENS: countEns,
+        numContentHash: countContent,
+        numPinned: numPinned,
+        storageUsed: `${statsIPFS.usedMB} MB`,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get statistics: ${error}`);
+      return {
+        numENSHasContentHash: 0,
+        numPinned: 0,
+      };
+    }
+  }
+
+  async getStorageStats() {
+    try {
+      const res = await axios.post(`${this.IPFS_API}/repo/stat`);
+      const { RepoSize, StorageMax, NumObjects } = res.data;
+
+      return {
+        usedBytes: RepoSize,
+        maxBytes: StorageMax,
+        files: NumObjects,
+        usedMB: (RepoSize / 1024 / 1024).toFixed(2),
+      };
+    } catch (error) {
+      this.logger.error('Failed to get IPFS storage stats', error);
+      throw error;
+    }
+  }
 }
