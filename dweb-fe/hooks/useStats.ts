@@ -1,6 +1,6 @@
 import useSWR from 'swr';
 
-const PINNING_SERVICE_URL = process.env.NEXT_PUBLIC_PINNING_SERVICE_URL || 'http://localhost:6100';
+const PINNING_SERVICE_URL = process.env.NEXT_PUBLIC_PINNING_SERVICE_URL || 'http://localhost:5300';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
