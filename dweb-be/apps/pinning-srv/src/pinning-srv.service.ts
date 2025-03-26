@@ -168,7 +168,7 @@ export class PinningSrvService {
     const lastHead = await this.getLastHead();
 
     // Start from block 1 if no synced head exists
-    const fromBlock = syncedHead ? BigInt(syncedHead.blockNum) + 1n : 1n;
+    const fromBlock = syncedHead ? BigInt(syncedHead.blockNum) + 1n : 0n;
 
     // Calculate toBlock as syncedHead + maxBehindHead, but clamp to lastHead
     let toBlock = fromBlock + maxBehindHead;
