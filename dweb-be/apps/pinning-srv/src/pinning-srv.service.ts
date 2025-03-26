@@ -171,7 +171,7 @@ export class PinningSrvService {
     const fromBlock = syncedHead ? BigInt(syncedHead.blockNum) + 1n : 0n;
 
     // Calculate toBlock as syncedHead + maxBehindHead, but clamp to lastHead
-    let toBlock = fromBlock + maxBehindHead;
+    let toBlock = fromBlock + maxBehindHead - 1n;
     if (toBlock > lastHead.number) {
       toBlock = lastHead.number;
     }
