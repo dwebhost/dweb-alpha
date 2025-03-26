@@ -7,10 +7,23 @@ services:
       - dweb-network
 
   ipfs:
-    image: ipfs/go-ipfs
+    image: ipfs/kubo:latest
+    privileged: true
+    ports:
+      - "4001:4001"
+      - "4001:4001/udp"
+    volumes:
+      - ./remove-lockfile.sh:/container-init.d/remove-lockfile.sh:ro
+      - ipfs_data:/data/ipfs
+      - ipfs_export:/export
+    environment:
+      - IPFS_PROFILE=server
     restart: always
-    networks:
-      - dweb-network
+    healthcheck:
+      test: ["CMD", "ipfs", "id"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   file-server:
     build:
@@ -85,6 +98,8 @@ networks:
   dweb-network:
 
 volumes:
+  ipfs_data:
+  ipfs_export:
   sqlite-db:
     driver: local
     driver_opts:
