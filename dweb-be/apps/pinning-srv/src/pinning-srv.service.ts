@@ -45,7 +45,8 @@ export class PinningSrvService {
   @Interval(20000)
   async handleIndex() {
     this.logger.debug('Called handleIndex');
-    await this.index(10n);
+    // await this.indexFromEnd(10n);
+    await this.indexFromStart(100000n);
   }
 
   @Interval(10000)
@@ -130,7 +131,7 @@ export class PinningSrvService {
     await Promise.all(persistJobs);
   }
 
-  async index(maxBehindHead: bigint) {
+  async indexFromEnd(maxBehindHead: bigint) {
     const syncedHead = await this.getSyncedHead();
     const lastHead = await this.getLastHead();
     let toBlock = lastHead.number;
@@ -152,6 +153,36 @@ export class PinningSrvService {
     await this.indexRange(fromBlock, toBlock);
 
     // point to the latest
+    await this.updateSyncedHead(toBlock);
+
+    return {
+      prevSyncedBlock: syncedHead?.blockNum || 0n,
+      fromBlock,
+      toBlock,
+    };
+  }
+
+  async indexFromStart(maxBehindHead: bigint) {
+    const syncedHead = await this.getSyncedHead();
+    const lastHead = await this.getLastHead();
+
+    // Start from block 1 if no synced head exists
+    const fromBlock = syncedHead ? BigInt(syncedHead.blockNum) : 1n;
+
+    // Calculate toBlock as syncedHead + maxBehindHead, but clamp to lastHead
+    let toBlock = fromBlock + maxBehindHead;
+    if (toBlock > lastHead.number) {
+      toBlock = lastHead.number;
+    }
+
+    // If fromBlock and toBlock are the same, nothing to index
+    if (toBlock <= fromBlock) {
+      return;
+    }
+
+    await this.indexRange(fromBlock, toBlock);
+
+    // Update the synced head to the latest processed block
     await this.updateSyncedHead(toBlock);
 
     return {
