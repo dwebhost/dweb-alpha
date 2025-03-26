@@ -214,7 +214,7 @@ export class PinningSrvService {
       // Raw query to lock rows for this instance
       const claimed = await tx.contentHash.updateMany({
         where: {
-          status: 'created',
+          status: { in: ['created', 'pinning'] },
         },
         data: {
           status: 'pinning',
@@ -229,32 +229,40 @@ export class PinningSrvService {
           status: 'pinning',
         },
         orderBy: { updatedAt: 'desc' },
-        take: claimed.count,
       });
 
-      for (const row of rows) {
-        try {
-          const cid = this.extractCID(row.hash);
-          console.log('cid', cid);
-          await axios.post(`${this.IPFS_API}/pin/add?arg=${cid}`);
+      // Process all rows in parallel with timeout
+      const results = await Promise.all(
+        rows.map(async (row) => {
+          try {
+            const cid = this.extractCID(row.hash);
+            this.logger.debug(`Attempting to pin CID: ${cid}`);
 
-          await tx.contentHash.update({
-            where: { id: row.id },
-            data: { status: 'pinned', updatedAt: new Date() },
-          });
+            // Add 10 second timeout to the axios request
+            await axios.post(`${this.IPFS_API}/pin/add?arg=${cid}`, null, {
+              timeout: 10000, // 10 seconds timeout
+            });
 
-          this.logger.log(`✅ Pinned ${cid}`);
-        } catch (err) {
-          this.logger.error(`❌ Failed to pin ID ${row.id}:`, err);
+            await tx.contentHash.update({
+              where: { id: row.id },
+              data: { status: 'pinned', updatedAt: new Date() },
+            });
 
-          await tx.contentHash.update({
-            where: { id: row.id },
-            data: { status: 'failed', updatedAt: new Date() },
-          });
-        }
-      }
+            this.logger.log(`✅ Pinned ${cid}`);
+            return true;
+          } catch (err) {
+            this.logger.error(`❌ Failed to pin ID ${row.id}:`, err);
 
-      return rows.length;
+            await tx.contentHash.update({
+              where: { id: row.id },
+              data: { status: 'failed', updatedAt: new Date() },
+            });
+            return false;
+          }
+        }),
+      );
+
+      return results.filter(Boolean).length;
     });
   }
 
