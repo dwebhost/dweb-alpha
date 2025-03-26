@@ -104,7 +104,7 @@ export class PinningSrvService {
     // flatten logs to array
     const allLogs = logs.flat();
     this.logger.debug(`Indexing from block ${fromBlock} to ${toBlock}`);
-    console.log('allLogs', allLogs);
+    // console.log('allLogs', allLogs);
 
     const submitEvents = allLogs.map((log) => ({
       txHash: (log as unknown as { transactionHash: `0x${string}` })
