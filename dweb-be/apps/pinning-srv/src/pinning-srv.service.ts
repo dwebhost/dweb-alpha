@@ -103,6 +103,7 @@ export class PinningSrvService {
     }
     // flatten logs to array
     const allLogs = logs.flat();
+    this.logger.debug(`Indexing from block ${fromBlock} to ${toBlock}`);
     console.log('allLogs', allLogs);
 
     const submitEvents = allLogs.map((log) => ({
@@ -167,7 +168,7 @@ export class PinningSrvService {
     const lastHead = await this.getLastHead();
 
     // Start from block 1 if no synced head exists
-    const fromBlock = syncedHead ? BigInt(syncedHead.blockNum) : 1n;
+    const fromBlock = syncedHead ? BigInt(syncedHead.blockNum) + 1n : 1n;
 
     // Calculate toBlock as syncedHead + maxBehindHead, but clamp to lastHead
     let toBlock = fromBlock + maxBehindHead;
@@ -175,8 +176,8 @@ export class PinningSrvService {
       toBlock = lastHead.number;
     }
 
-    // If fromBlock and toBlock are the same, nothing to index
-    if (toBlock <= fromBlock) {
+    // If fromBlock proceed beyond lastHead, nothing to index
+    if (toBlock < fromBlock) {
       return;
     }
 
