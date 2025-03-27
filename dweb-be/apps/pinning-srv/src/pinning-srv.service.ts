@@ -22,6 +22,7 @@ export class PinningSrvService {
   private ipfs: ReturnType<typeof create>;
   private isPinning = false;
   private isChecking = false;
+  private isRetrying = false;
 
   constructor(private prisma: PrismaService) {
     let chain: Chain;
@@ -64,6 +65,12 @@ export class PinningSrvService {
   async handleCheckCid() {
     this.logger.debug('Called handleCheckCid');
     await this.checkCid();
+  }
+
+  @Interval(20000)
+  async handleRetry() {
+    this.logger.debug('Called handleRetry');
+    await this.retry();
   }
 
   async getLastHead() {
@@ -243,40 +250,7 @@ export class PinningSrvService {
       });
     });
 
-    // Process all rows in parallel with timeout
-    const results = await Promise.allSettled(
-      rows.map(async (row) => {
-        try {
-          const cid = this.extractCID(row.hash);
-          this.logger.debug(`Attempting to pin CID: ${cid}`);
-
-          // Add 10 second timeout to the axios request
-          await axios.post(`${this.IPFS_API}/pin/add?arg=${cid}`, null, {
-            timeout: 10000, // 10 seconds timeout
-          });
-
-          // Second transaction: update status after pinning
-          await this.prisma.contentHash.update({
-            where: { id: row.id },
-            data: { status: 'pinned', updatedAt: new Date() },
-          });
-
-          this.logger.log(`✅ Pinned ${cid}`);
-          return true;
-        } catch (err) {
-          this.logger.error(`❌ Failed to pin ID ${row.id}:`, err.message);
-
-          // Second transaction: update status after failure
-          await this.prisma.contentHash.update({
-            where: { id: row.id },
-            data: { status: 'failed', updatedAt: new Date() },
-          });
-          return false;
-        }
-      }),
-    );
-
-    return results.filter((x) => x.status === 'fulfilled').length;
+    return this.handleBatchPin(rows);
   }
 
   extractCID(encoded: string): string {
@@ -400,7 +374,10 @@ export class PinningSrvService {
                 break;
               }
             } else {
-              this.logger.error(`❌ Failed to check ID ${row.id}:`, err.message);
+              this.logger.error(
+                `❌ Failed to check ID ${row.id}:`,
+                err.message,
+              );
               await this.prisma.contentHash.update({
                 where: { id: row.id },
                 data: { status: 'notfounded', updatedAt: new Date() },
@@ -413,6 +390,89 @@ export class PinningSrvService {
           await this.prisma.contentHash.update({
             where: { id: row.id },
             data: { status: 'failed', updatedAt: new Date() },
+          });
+        }
+      }),
+    );
+
+    return results.filter((x) => x.status === 'fulfilled').length;
+  }
+
+  async retry() {
+    if (this.isRetrying) {
+      this.logger.debug('Already retrying');
+      return;
+    }
+    this.isRetrying = true;
+    try {
+      const processed = await this.retryBatch(10);
+      this.logger.log(`Processed retry ${processed} rows`);
+    } catch (e) {
+      this.logger.error('Failed to process retry batch:', e);
+    }
+    this.isRetrying = false;
+  }
+
+  async retryBatch(limit = 10) {
+    const rows: ContentHash[] = await this.prisma.contentHash.findMany({
+      where: {
+        status: 'failed',
+        retry: { lt: 6 },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+
+    return this.handleBatchPin(rows);
+  }
+
+  async handleBatchPin(rows: ContentHash[]) {
+    const results = await Promise.allSettled(
+      rows.map(async (row) => {
+        try {
+          const cid = this.extractCID(row.hash);
+          this.logger.debug(`Retry CID: ${cid}`);
+
+          try {
+            await axios.post(`${this.IPFS_API}/pin/add?arg=${cid}`, null, {
+              timeout: 10000, // 10 seconds timeout
+            });
+
+            await this.prisma.contentHash.update({
+              where: { id: row.id },
+              data: { status: 'pinned', updatedAt: new Date() },
+            });
+
+            this.logger.log(`✅ Pinned ${cid}`);
+            return true;
+          } catch (err) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            this.logger.error(`❌ Failed to pin ID ${row.id}:`, err.message);
+
+            await this.prisma.contentHash.update({
+              where: { id: row.id },
+              data: {
+                status: 'failed',
+                retry: {
+                  increment: 1,
+                },
+                updatedAt: new Date(),
+              },
+            });
+            return false;
+          }
+        } catch (err) {
+          this.logger.error(`❌ Failed to retry ID ${row.id}:`, err);
+
+          await this.prisma.contentHash.update({
+            where: { id: row.id },
+            data: {
+              status: 'failed',
+              retry: {
+                increment: 1,
+              },
+              updatedAt: new Date(),
+            },
           });
         }
       }),

@@ -84,6 +84,7 @@ model ContentHash {
   hash      String
   blockNum  BigInt
   status    String
+  retry     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime
 
