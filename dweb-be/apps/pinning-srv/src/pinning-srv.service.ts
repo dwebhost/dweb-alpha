@@ -49,7 +49,7 @@ export class PinningSrvService {
     await this.indexFromStart(100000n);
   }
 
-  @Interval(10000)
+  @Interval(20000)
   async handlePin() {
     this.logger.debug('Called handlePin');
     await this.pin();
@@ -253,7 +253,7 @@ export class PinningSrvService {
           this.logger.log(`✅ Pinned ${cid}`);
           return true;
         } catch (err) {
-          this.logger.error(`❌ Failed to pin ID ${row.id}:`, err);
+          this.logger.error(`❌ Failed to pin ID ${row.id}:`, err.message);
 
           // Second transaction: update status after failure
           await this.prisma.contentHash.update({
