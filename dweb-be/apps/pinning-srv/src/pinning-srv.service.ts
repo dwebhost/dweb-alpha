@@ -60,7 +60,7 @@ export class PinningSrvService {
     await this.pin();
   }
 
-  @Interval(10000)
+  @Interval(20000)
   async handleCheckCid() {
     this.logger.debug('Called handleCheckCid');
     await this.checkCid();
@@ -354,7 +354,7 @@ export class PinningSrvService {
     this.isChecking = true;
     try {
       const processed = await this.checkCidBatch(10);
-      this.logger.log(`Processed ${processed} rows`);
+      this.logger.log(`Processed checked ${processed} rows`);
     } catch (e) {
       this.logger.error('Failed to process batch:', e);
     }
@@ -371,26 +371,16 @@ export class PinningSrvService {
       take: limit,
     });
 
-    for (const row of rows) {
-      try {
-        const cid = this.extractCID(row.hash);
-        this.logger.debug(`Handle CID: ${cid}`);
-
+    const results = await Promise.allSettled(
+      rows.map(async (row) => {
         try {
-          const stream = this.ipfs.cat(cid, { timeout: 50000 });
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          for await (const chunk of stream) {
-            await this.prisma.contentHash.update({
-              where: { id: row.id },
-              data: { status: 'checked', updatedAt: new Date() },
-            });
-            this.logger.log(`✅ Checked ${cid}`);
-            break;
-          }
-        } catch (err) {
-          if (err.message.includes('dag node is a directory')) {
+          const cid = this.extractCID(row.hash);
+          this.logger.debug(`Handle CID: ${cid}`);
+
+          try {
+            const stream = this.ipfs.cat(cid, { timeout: 50000 });
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            for await (const file of this.ipfs.ls(cid)) {
+            for await (const chunk of stream) {
               await this.prisma.contentHash.update({
                 where: { id: row.id },
                 data: { status: 'checked', updatedAt: new Date() },
@@ -398,24 +388,36 @@ export class PinningSrvService {
               this.logger.log(`✅ Checked ${cid}`);
               break;
             }
-          } else {
-            this.logger.error(`❌ Failed to check ID ${row.id}:`, err.message);
-            await this.prisma.contentHash.update({
-              where: { id: row.id },
-              data: { status: 'notfounded', updatedAt: new Date() },
-            });
+          } catch (err) {
+            if (err.message.includes('dag node is a directory')) {
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              for await (const file of this.ipfs.ls(cid)) {
+                await this.prisma.contentHash.update({
+                  where: { id: row.id },
+                  data: { status: 'checked', updatedAt: new Date() },
+                });
+                this.logger.log(`✅ Checked ${cid}`);
+                break;
+              }
+            } else {
+              this.logger.error(`❌ Failed to check ID ${row.id}:`, err.message);
+              await this.prisma.contentHash.update({
+                where: { id: row.id },
+                data: { status: 'notfounded', updatedAt: new Date() },
+              });
+            }
           }
+        } catch (err) {
+          this.logger.error(`❌ Failed to check ID ${row.id}:`, err);
+
+          await this.prisma.contentHash.update({
+            where: { id: row.id },
+            data: { status: 'failed', updatedAt: new Date() },
+          });
         }
-      } catch (err) {
-        this.logger.error(`❌ Failed to check ID ${row.id}:`, err);
+      }),
+    );
 
-        await this.prisma.contentHash.update({
-          where: { id: row.id },
-          data: { status: 'failed', updatedAt: new Date() },
-        });
-      }
-    }
-
-    return rows.length;
+    return results.filter((x) => x.status === 'fulfilled').length;
   }
 }
