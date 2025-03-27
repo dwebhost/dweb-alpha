@@ -209,10 +209,10 @@ export class PinningSrvService {
   }
 
   async processBatch(limit = 10) {
-    // Start transaction
-    return await this.prisma.$transaction(async (tx) => {
+    // First transaction: claim rows to process
+    const rows = await this.prisma.$transaction(async (tx) => {
       // Raw query to lock rows for this instance
-      const claimed = await tx.contentHash.updateMany({
+      await tx.contentHash.updateMany({
         where: {
           status: { in: ['created', 'pinning'] },
         },
@@ -224,46 +224,48 @@ export class PinningSrvService {
       });
 
       // Re-fetch just the claimed ones
-      const rows: ContentHash[] = await tx.contentHash.findMany({
+      return tx.contentHash.findMany({
         where: {
           status: 'pinning',
         },
         orderBy: { updatedAt: 'desc' },
       });
-
-      // Process all rows in parallel with timeout
-      const results = await Promise.allSettled(
-        rows.map(async (row) => {
-          try {
-            const cid = this.extractCID(row.hash);
-            this.logger.debug(`Attempting to pin CID: ${cid}`);
-
-            // Add 10 second timeout to the axios request
-            await axios.post(`${this.IPFS_API}/pin/add?arg=${cid}`, null, {
-              timeout: 10000, // 10 seconds timeout
-            });
-
-            await tx.contentHash.update({
-              where: { id: row.id },
-              data: { status: 'pinned', updatedAt: new Date() },
-            });
-
-            this.logger.log(`✅ Pinned ${cid}`);
-            return true;
-          } catch (err) {
-            this.logger.error(`❌ Failed to pin ID ${row.id}:`, err);
-
-            await tx.contentHash.update({
-              where: { id: row.id },
-              data: { status: 'failed', updatedAt: new Date() },
-            });
-            return false;
-          }
-        }),
-      );
-
-      return results.filter((x) => x.status == 'fulfilled').length;
     });
+
+    // Process all rows in parallel with timeout
+    const results = await Promise.allSettled(
+      rows.map(async (row) => {
+        try {
+          const cid = this.extractCID(row.hash);
+          this.logger.debug(`Attempting to pin CID: ${cid}`);
+
+          // Add 10 second timeout to the axios request
+          await axios.post(`${this.IPFS_API}/pin/add?arg=${cid}`, null, {
+            timeout: 10000, // 10 seconds timeout
+          });
+
+          // Second transaction: update status after pinning
+          await this.prisma.contentHash.update({
+            where: { id: row.id },
+            data: { status: 'pinned', updatedAt: new Date() },
+          });
+
+          this.logger.log(`✅ Pinned ${cid}`);
+          return true;
+        } catch (err) {
+          this.logger.error(`❌ Failed to pin ID ${row.id}:`, err);
+
+          // Second transaction: update status after failure
+          await this.prisma.contentHash.update({
+            where: { id: row.id },
+            data: { status: 'failed', updatedAt: new Date() },
+          });
+          return false;
+        }
+      }),
+    );
+
+    return results.filter((x) => x.status === 'fulfilled').length;
   }
 
   extractCID(encoded: string): string {
