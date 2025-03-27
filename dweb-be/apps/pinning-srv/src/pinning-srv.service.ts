@@ -232,7 +232,7 @@ export class PinningSrvService {
       });
 
       // Process all rows in parallel with timeout
-      const results = await Promise.all(
+      const results = await Promise.allSettled(
         rows.map(async (row) => {
           try {
             const cid = this.extractCID(row.hash);
@@ -262,7 +262,7 @@ export class PinningSrvService {
         }),
       );
 
-      return results.filter(Boolean).length;
+      return results.filter((x) => x.status == 'fulfilled').length;
     });
   }
 
