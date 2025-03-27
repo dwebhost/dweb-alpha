@@ -7,6 +7,7 @@ import { CONTRACT_ABI } from './abi/abi';
 import axios from 'axios';
 import * as contentHash from 'content-hash';
 import { type ContentHash } from '@prisma/client';
+import { create } from 'ipfs-http-client';
 
 @Injectable()
 export class PinningSrvService {
@@ -18,7 +19,9 @@ export class PinningSrvService {
     process.env.CONTRACTS ||
     '0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63,0xDaaF96c344f63131acadD0Ea35170E7892d3dfBA';
   private IPFS_API = process.env.IPFS_API || 'http://localhost:5001/api/v0';
+  private ipfs: ReturnType<typeof create>;
   private isPinning = false;
+  private isChecking = false;
 
   constructor(private prisma: PrismaService) {
     let chain: Chain;
@@ -40,6 +43,8 @@ export class PinningSrvService {
       chain: chain,
       transport: http(this.RPC_URL),
     }) as PublicClient;
+
+    this.ipfs = create({ url: this.IPFS_API });
   }
 
   @Interval(20000)
@@ -53,6 +58,12 @@ export class PinningSrvService {
   async handlePin() {
     this.logger.debug('Called handlePin');
     await this.pin();
+  }
+
+  @Interval(10000)
+  async handleCheckCid() {
+    this.logger.debug('Called handleCheckCid');
+    await this.checkCid();
   }
 
   async getLastHead() {
@@ -214,7 +225,7 @@ export class PinningSrvService {
       // Raw query to lock rows for this instance
       await tx.contentHash.updateMany({
         where: {
-          status: { in: ['created', 'pinning'] },
+          status: { in: ['checked', 'pinning'] },
         },
         data: {
           status: 'pinning',
@@ -333,5 +344,78 @@ export class PinningSrvService {
       this.logger.error('Failed to get IPFS storage stats', error);
       throw error;
     }
+  }
+
+  async checkCid() {
+    if (this.isChecking) {
+      this.logger.debug('Already checking');
+      return;
+    }
+    this.isChecking = true;
+    try {
+      const processed = await this.checkCidBatch(10);
+      this.logger.log(`Processed ${processed} rows`);
+    } catch (e) {
+      this.logger.error('Failed to process batch:', e);
+    }
+    this.isChecking = false;
+  }
+
+  async checkCidBatch(limit = 10) {
+    // TODO: handle multiple instances. This is not safe for multiple instances
+    const rows: ContentHash[] = await this.prisma.contentHash.findMany({
+      where: {
+        status: 'created',
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+
+    for (const row of rows) {
+      try {
+        const cid = this.extractCID(row.hash);
+        this.logger.debug(`Handle CID: ${cid}`);
+
+        try {
+          const stream = this.ipfs.cat(cid, { timeout: 50000 });
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          for await (const chunk of stream) {
+            await this.prisma.contentHash.update({
+              where: { id: row.id },
+              data: { status: 'checked', updatedAt: new Date() },
+            });
+            this.logger.log(`✅ Checked ${cid}`);
+            break;
+          }
+        } catch (err) {
+          if (err.message.includes('dag node is a directory')) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            for await (const file of this.ipfs.ls(cid)) {
+              await this.prisma.contentHash.update({
+                where: { id: row.id },
+                data: { status: 'checked', updatedAt: new Date() },
+              });
+              this.logger.log(`✅ Checked ${cid}`);
+              break;
+            }
+          } else {
+            this.logger.error(`❌ Failed to check ID ${row.id}:`, err.message);
+            await this.prisma.contentHash.update({
+              where: { id: row.id },
+              data: { status: 'notfounded', updatedAt: new Date() },
+            });
+          }
+        }
+      } catch (err) {
+        this.logger.error(`❌ Failed to check ID ${row.id}:`, err);
+
+        await this.prisma.contentHash.update({
+          where: { id: row.id },
+          data: { status: 'failed', updatedAt: new Date() },
+        });
+      }
+    }
+
+    return rows.length;
   }
 }
