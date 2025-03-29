@@ -48,26 +48,26 @@ export class PinningSrvService {
     this.ipfs = create({ url: this.IPFS_API });
   }
 
-  @Interval(20000)
+  // @Interval(20000)
   async handleIndex() {
     this.logger.debug('Called handleIndex');
     // await this.indexFromEnd(10n);
     await this.indexFromStart(100000n);
   }
 
-  @Interval(20000)
+  // @Interval(20000)
   async handlePin() {
     this.logger.debug('Called handlePin');
     await this.pin();
   }
 
-  @Interval(20000)
+  // @Interval(20000)
   async handleCheckCid() {
     this.logger.debug('Called handleCheckCid');
     await this.checkCid();
   }
 
-  @Interval(20000)
+  // @Interval(20000)
   async handleRetry() {
     this.logger.debug('Called handleRetry');
     await this.retry();
@@ -479,5 +479,38 @@ export class PinningSrvService {
     );
 
     return results.filter((x) => x.status === 'fulfilled').length;
+  }
+
+  async getContentHashes(page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.contentHash.findMany({
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.contentHash.count(),
+    ]);
+
+    console.log('getContentHashes', data, total);
+
+    // Convert the data to the desired format
+    const formattedData = data.map((item) => ({
+      id: item.id,
+      node: item.node,
+      hash: item.hash,
+      status: item.status,
+      retry: item.retry,
+      updatedAt: item.updatedAt.toISOString(),
+    }));
+
+    return {
+      items: formattedData,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 }
