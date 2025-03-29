@@ -1,17 +1,17 @@
 'use client';
 
-import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useStats } from '@/hooks/useStats';
+import {Card, CardContent} from '@/components/ui/card';
+import {Skeleton} from '@/components/ui/skeleton';
+import {useStats} from '@/hooks/useStats';
 
 export default function Stats() {
-  const { data, error, isLoading } = useStats();
+  const {data, error, isLoading} = useStats();
 
   const items = [
-    { label: 'Total ENS', value: data?.numENS },
-    { label: 'Total Website', value: data?.numContentHash },
-    { label: 'Pinned Files', value: data?.numPinned },
-    { label: 'Storage Used', value: data?.storageUsed },
+    {label: 'Total ENS', value: data?.numENS},
+    {label: 'Total Website', value: data?.numContentHash},
+    {label: 'Pinned Files', value: data?.numPinned},
+    {label: 'Storage Used', value: data?.storageUsed},
   ];
 
   if (error) {
@@ -31,7 +31,7 @@ export default function Stats() {
             {!isLoading && item.value !== undefined ? (
               <p className="text-xl font-bold text-center">{item.value}</p>
             ) : (
-              <Skeleton className="h-6 w-24" />
+              <Skeleton className="h-6 w-24"/>
             )}
           </CardContent>
         </Card>
