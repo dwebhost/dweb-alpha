@@ -7,6 +7,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import {useContentHashes} from "@/hooks/useStats";
 import TablePagination from "@/components/table-pagination";
+import {StatusBadge} from "@/components/status-badge";
+
+type ContentHashType = {
+  id: string;
+  node: string;
+  hash: string;
+  cid: string;
+  status: string;
+  retry: number;
+  updatedAt: string;
+}
 
 export default function ContentHashTable() {
   const {
@@ -18,7 +29,7 @@ export default function ContentHashTable() {
   } = useContentHashes();
 
   const [search, setSearch] = useState('');
-  const filtered = contentHashes.filter((item: { node: string; id: string; hash: string; status: string; retry: number; updatedAt: string }) =>
+  const filtered = contentHashes.filter((item: ContentHashType) =>
     item.node.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -44,9 +55,8 @@ export default function ContentHashTable() {
             <TableHeader>
               <TableRow>
                 <TableHead>ENS Node</TableHead>
-                <TableHead>Hash</TableHead>
+                <TableHead>CID</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Retry</TableHead>
                 <TableHead>Updated</TableHead>
               </TableRow>
             </TableHeader>
@@ -58,19 +68,13 @@ export default function ContentHashTable() {
                   </TableCell>
                 </TableRow>
               ) : filtered.length > 0 ? (
-                filtered.map((item: {
-                  node: string;
-                  id: string;
-                  hash: string;
-                  status: string;
-                  retry: number;
-                  updatedAt: string
-                }) => (
+                filtered.map((item: ContentHashType) => (
                   <TableRow key={item.id}>
-                    <TableCell>{item.node}</TableCell>
-                    <TableCell className="truncate max-w-[200px]">{item.hash}</TableCell>
-                    <TableCell>{item.status}</TableCell>
-                    <TableCell>{item.retry}</TableCell>
+                    <TableCell className="truncate max-w-[250px]">{item.node}</TableCell>
+                    <TableCell>{item.cid}</TableCell>
+                    <TableCell>
+                      <StatusBadge status={item.status} />
+                    </TableCell>
                     <TableCell>{format(new Date(item.updatedAt), 'PPpp')}</TableCell>
                   </TableRow>
                 ))

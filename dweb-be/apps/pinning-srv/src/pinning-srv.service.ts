@@ -12,13 +12,13 @@ import { create } from 'ipfs-http-client';
 @Injectable()
 export class PinningSrvService {
   private readonly logger = new Logger(PinningSrvService.name);
-  public publicClient: PublicClient;
   private NETWORK = process.env.NETWORK || 'mainnet';
   private RPC_URL = process.env.RPC_URL;
   private CONTRACTS =
     process.env.CONTRACTS ||
     '0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63,0xDaaF96c344f63131acadD0Ea35170E7892d3dfBA';
   private IPFS_API = process.env.IPFS_API || 'http://localhost:5001/api/v0';
+  public publicClient: PublicClient;
   private ipfs: ReturnType<typeof create>;
   private isPinning = false;
   private isChecking = false;
@@ -48,26 +48,26 @@ export class PinningSrvService {
     this.ipfs = create({ url: this.IPFS_API });
   }
 
-  // @Interval(20000)
+  @Interval(20000)
   async handleIndex() {
     this.logger.debug('Called handleIndex');
     // await this.indexFromEnd(10n);
     await this.indexFromStart(100000n);
   }
 
-  // @Interval(20000)
+  @Interval(20000)
   async handlePin() {
     this.logger.debug('Called handlePin');
     await this.pin();
   }
 
-  // @Interval(20000)
+  @Interval(20000)
   async handleCheckCid() {
     this.logger.debug('Called handleCheckCid');
     await this.checkCid();
   }
 
-  // @Interval(20000)
+  @Interval(20000)
   async handleRetry() {
     this.logger.debug('Called handleRetry');
     await this.retry();
@@ -493,17 +493,26 @@ export class PinningSrvService {
       this.prisma.contentHash.count(),
     ]);
 
-    console.log('getContentHashes', data, total);
-
     // Convert the data to the desired format
-    const formattedData = data.map((item) => ({
-      id: item.id,
-      node: item.node,
-      hash: item.hash,
-      status: item.status,
-      retry: item.retry,
-      updatedAt: item.updatedAt.toISOString(),
-    }));
+    const formattedData = data.map((item) => {
+      // extract CID
+      let cid = '';
+      try {
+        cid = this.extractCID(item.hash);
+      } catch (e) {
+        this.logger.error(`Failed to extract CID from ${item.hash}: ${e}`);
+      }
+
+      return {
+        id: item.id,
+        node: item.node,
+        hash: item.hash,
+        cid: cid,
+        status: item.status,
+        retry: item.retry,
+        updatedAt: item.updatedAt,
+      };
+    });
 
     return {
       items: formattedData,
