@@ -2,12 +2,10 @@ import {
   Pagination,
   PaginationContent,
   PaginationItem,
-  PaginationNext,
-  PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
-import {getPaginationRange} from "@/lib/utils";
-import {ChevronLeft, ChevronRight} from "lucide-react";
+import { getPaginationRange } from "@/lib/utils";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Props {
   currentPage: number;
@@ -15,7 +13,11 @@ interface Props {
   onPageChange: (page: number) => void;
 }
 
-export default function TablePagination({ currentPage, totalPages, onPageChange }: Props) {
+export default function TablePagination({
+  currentPage,
+  totalPages,
+  onPageChange,
+}: Props) {
   if (totalPages <= 1) return null;
 
   const pageRange = getPaginationRange(currentPage, totalPages);
