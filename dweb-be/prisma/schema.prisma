@@ -81,6 +81,7 @@ model ContentHash {
   id        Int      @id @default(autoincrement())
   txHash    String   @unique
   node      String
+  ensName   String?  @default("")
   hash      String
   blockNum  BigInt
   status    String
@@ -89,4 +90,7 @@ model ContentHash {
   updatedAt DateTime
 
   @@index([id, node, status])
+  @@index([ensName])
+  @@index([hash])
+  @@index([status])
 }

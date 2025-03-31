@@ -18,11 +18,15 @@ export class PinningSrvService {
     process.env.CONTRACTS ||
     '0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63,0xDaaF96c344f63131acadD0Ea35170E7892d3dfBA';
   private IPFS_API = process.env.IPFS_API || 'http://localhost:5001/api/v0';
+  private ENS_GRAPHQL =
+    process.env.ENS_GRAPHQL ||
+    'https://api.thegraph.com/subgraphs/name/ensdomains/ens';
   public publicClient: PublicClient;
   private ipfs: ReturnType<typeof create>;
   private isPinning = false;
   private isChecking = false;
   private isRetrying = false;
+  private isDecoding = false;
 
   constructor(private prisma: PrismaService) {
     let chain: Chain;
@@ -71,6 +75,22 @@ export class PinningSrvService {
   async handleRetry() {
     this.logger.debug('Called handleRetry');
     await this.retry();
+  }
+
+  @Interval(10000)
+  async decodeNode() {
+    this.logger.debug('Called decodeNode');
+    if (this.isDecoding) {
+      this.logger.debug('Already decoding');
+      return;
+    }
+    this.isDecoding = true;
+    try {
+      await this.handleDecodeNode();
+    } catch (e) {
+      this.logger.error('Failed to decode node:', e);
+    }
+    this.isDecoding = false;
   }
 
   async getLastHead() {
@@ -521,5 +541,61 @@ export class PinningSrvService {
       limit,
       totalPages: Math.ceil(total / limit),
     };
+  }
+
+  async handleDecodeNode() {
+    const rows = await this.prisma.contentHash.findMany({
+      where: {
+        ensName: '',
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+
+    const nodes = rows.map((row) => row.node);
+    // remove duplicates
+    const uniqueNodes = Array.from(new Set(nodes));
+    if (uniqueNodes.length === 0) {
+      return;
+    }
+    await this.resolveENSNodes(uniqueNodes);
+  }
+
+  async resolveENSNodes(nodes: string[]) {
+    const query = `
+    query {
+      domains(where: { id_in: [${nodes.map((n) => `"${n}"`).join(',')}]}) {
+        id
+        name
+      }
+    }`;
+
+    console.log('query', query);
+
+    const res = await fetch(this.ENS_GRAPHQL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.ENS_GRAPHQL_TOKEN}`,
+      },
+      body: JSON.stringify({ query }),
+    });
+
+    const json = await res.json();
+    if (json.errors) {
+      this.logger.error(`Failed to resolve ENS nodes: ${json.errors}`);
+      return;
+    }
+
+    // update the content hash with the name to database
+    const updates = json.data.domains.map(
+      (domain: { id: string; name: string }) => {
+        return this.prisma.contentHash.updateMany({
+          where: { node: domain.id },
+          data: { ensName: domain.name },
+        });
+      },
+    );
+    await Promise.all(updates);
   }
 }
