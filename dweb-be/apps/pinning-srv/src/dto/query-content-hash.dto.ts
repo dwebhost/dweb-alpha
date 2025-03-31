@@ -1,4 +1,9 @@
-import { IsOptional, IsNumberString } from 'class-validator';
+import {
+  IsOptional,
+  IsNumberString,
+  IsString,
+  IsNotEmpty,
+} from 'class-validator';
 
 export class QueryContentHashDto {
   @IsOptional()
@@ -8,4 +13,10 @@ export class QueryContentHashDto {
   @IsOptional()
   @IsNumberString()
   limit?: string;
+}
+
+export class QueryContentHashByNodeDto extends QueryContentHashDto {
+  @IsString()
+  @IsNotEmpty()
+  node: string;
 }

@@ -1,6 +1,9 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { PinningSrvService } from './pinning-srv.service';
-import { QueryContentHashDto } from './dto/query-content-hash.dto';
+import {
+  QueryContentHashByNodeDto,
+  QueryContentHashDto,
+} from './dto/query-content-hash.dto';
 
 @Controller('/pinning')
 export class PinningSrvController {
@@ -20,5 +23,13 @@ export class PinningSrvController {
     console.log('limit', limit);
 
     return this.pinningSrvService.getContentHashes(page, limit);
+  }
+
+  @Get('contenthash')
+  async getContentHash(@Query() query: QueryContentHashByNodeDto) {
+    const page = parseInt(query.page || '1', 10);
+    const limit = parseInt(query.limit || '30', 10);
+    const node = query.node;
+    return this.pinningSrvService.getContentHash(node, page, limit);
   }
 }

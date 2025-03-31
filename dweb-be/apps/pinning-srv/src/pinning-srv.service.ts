@@ -526,6 +526,7 @@ export class PinningSrvService {
       return {
         id: item.id,
         node: item.node,
+        ensName: item.ensName || '',
         hash: item.hash,
         cid: cid,
         status: item.status,
@@ -597,5 +598,51 @@ export class PinningSrvService {
       },
     );
     await Promise.all(updates);
+  }
+
+  async getContentHash(node: string, page = 1, limit = 30) {
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.contentHash.findMany({
+        where: {
+          node,
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.contentHash.count(),
+    ]);
+
+    // Convert the data to the desired format
+    const formattedData = data.map((item) => {
+      // extract CID
+      let cid = '';
+      try {
+        cid = this.extractCID(item.hash);
+      } catch (e) {
+        this.logger.error(`Failed to extract CID from ${item.hash}: ${e}`);
+      }
+
+      return {
+        id: item.id,
+        node: item.node,
+        ensName: item.ensName || '',
+        hash: item.hash,
+        cid: cid,
+        status: item.status,
+        retry: item.retry,
+        updatedAt: item.updatedAt,
+      };
+    });
+
+    return {
+      items: formattedData,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 }

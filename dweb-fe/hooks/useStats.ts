@@ -3,7 +3,7 @@
 import useSWR from 'swr';
 import {useState} from "react";
 
-const PINNING_SERVICE_URL = process.env.NEXT_PUBLIC_PINNING_SERVICE_URL || 'http://localhost:5300';
+export const PINNING_SERVICE_URL = process.env.NEXT_PUBLIC_PINNING_SERVICE_URL || 'http://localhost:5300';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
