@@ -77,7 +77,7 @@ export class PinningSrvService {
     await this.retry();
   }
 
-  @Interval(10000)
+  @Interval(1000)
   async decodeNode() {
     this.logger.debug('Called decodeNode');
     if (this.isDecoding) {
@@ -550,7 +550,7 @@ export class PinningSrvService {
         ensName: '',
       },
       orderBy: { createdAt: 'desc' },
-      take: 20,
+      take: 100,
     });
 
     const nodes = rows.map((row) => row.node);

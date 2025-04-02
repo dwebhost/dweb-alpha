@@ -1,14 +1,21 @@
 "use client";
 
-import {useEffect, useState} from 'react';
-import {Input} from '@/components/ui/input';
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table';
-import {Skeleton} from '@/components/ui/skeleton';
-import {format} from 'date-fns';
-import {PINNING_SERVICE_URL, useContentHashes} from "@/hooks/useStats";
+import { useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { format } from "date-fns";
+import { PINNING_SERVICE_URL, useContentHashes } from "@/hooks/useStats";
 import TablePagination from "@/components/table-pagination";
-import {StatusBadge} from "@/components/status-badge";
-import {namehash} from "viem";
+import { StatusBadge } from "@/components/status-badge";
+import { namehash } from "viem";
 
 type ContentHashType = {
   id: string;
@@ -19,22 +26,18 @@ type ContentHashType = {
   status: string;
   retry: number;
   updatedAt: string;
-}
+};
 
 export default function ContentHashTable() {
   const [searchResults, setSearchResults] = useState<ContentHashType[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const {
-    contentHashes,
-    totalPages,
-    page,
-    setPage,
-    isLoading,
-  } = useContentHashes();
+  const { contentHashes, totalPages, page, setPage, isLoading } =
+    useContentHashes();
 
-  const [search, setSearch] = useState('');
-  const merged = [...contentHashes, ...searchResults].filter((item: ContentHashType) =>
-    item.ensName.toLowerCase().includes(search.toLowerCase())
+  const [search, setSearch] = useState("");
+  const merged = [...contentHashes, ...searchResults].filter(
+    (item: ContentHashType) =>
+      item.ensName.toLowerCase().includes(search.toLowerCase())
   );
 
   const uniqueItemsMap = new Map<string, ContentHashType>();
@@ -44,13 +47,15 @@ export default function ContentHashTable() {
   const filtered = Array.from(uniqueItemsMap.values());
 
   const fetchEnsName = async (ensName: string) => {
-    const response = await fetch(`${PINNING_SERVICE_URL}/pinning/contenthash?node=${namehash(ensName)}`);
+    const response = await fetch(
+      `${PINNING_SERVICE_URL}/pinning/contenthash?node=${namehash(ensName)}`
+    );
     return await response.json();
-  }
+  };
 
   useEffect(() => {
     const fetchIfEth = async () => {
-      if (search.endsWith('.eth')) {
+      if (search.endsWith(".eth")) {
         setIsSearching(true);
         try {
           const res = await fetchEnsName(search);
@@ -99,24 +104,38 @@ export default function ContentHashTable() {
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={6}>
-                  <Skeleton className="w-full h-10"/>
+                  <Skeleton className="w-full h-10" />
                 </TableCell>
               </TableRow>
             ) : filtered.length > 0 ? (
               filtered.map((item: ContentHashType) => (
                 <TableRow key={item.id}>
-                  <TableCell
-                    className="truncate max-w-[250px]">{item.ensName !== '' ? item.ensName : item.node}</TableCell>
-                  <TableCell>{item.cid}</TableCell>
-                  <TableCell>
-                    <StatusBadge status={item.status}/>
+                  <TableCell className="truncate max-w-[250px]">
+                    {item.ensName !== "" ? item.ensName : item.node}
                   </TableCell>
-                  <TableCell>{format(new Date(item.updatedAt), 'PPpp')}</TableCell>
+                  <TableCell>
+                    <a
+                      href={`https://dweb.link/ipfs/${item.cid}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {item.cid}
+                    </a>
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={item.status} />
+                  </TableCell>
+                  <TableCell>
+                    {format(new Date(item.updatedAt), "PPpp")}
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                <TableCell
+                  colSpan={6}
+                  className="text-center text-muted-foreground"
+                >
                   No content hashes found.
                 </TableCell>
               </TableRow>
@@ -126,13 +145,14 @@ export default function ContentHashTable() {
       </div>
 
       {!isSearching && (
-      <div className="flex justify-center">
-        <TablePagination
-          currentPage={page}
-          totalPages={totalPages}
-          onPageChange={(newPage) => setPage(newPage)}
-        />
-      </div>)}
+        <div className="flex justify-center">
+          <TablePagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={(newPage) => setPage(newPage)}
+          />
+        </div>
+      )}
     </div>
   );
 }
